@@ -18,7 +18,7 @@ def read_file(path: str, bitrate: int = 24, transpose: bool = True):
 
     Returns
     -------
-    list
+    numpy.ndarray
         A list of audio signal channels
     sr : int
         The sampling rate of the file
@@ -30,6 +30,5 @@ def read_file(path: str, bitrate: int = 24, transpose: bool = True):
     source, sr = soundfile.read(file=path, dtype=_dtype, always_2d=True)
     if transpose:
         source = np.transpose(np.right_shift(source, 8))
-
-    return [ch for ch in source], sr
+    return source, sr
 
