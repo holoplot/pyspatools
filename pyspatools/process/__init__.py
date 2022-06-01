@@ -1,39 +1,34 @@
 import numpy as np
 
-__all__ = ['left_trim']
+__all__ = ['get_latency']
 
 
-def left_trim(x, start=None):
+def get_latency(x, threshold=0, offset=0) -> list:
     """
-    Iterate through each channel, find the first non-zero sample. Pick the minimum value and
-    left trim all channels to that. This can removed any zero padding.
+    Iterate through each channel and returns the sample
 
     Parameters
     ----------
     x : numpy.ndarray
-        Multichannel array
-    start : int
-        If not None, instead of finding the first non zero sample, all channels trim to pos
-
+        Audio signals
+    threshold : int or float
+        The signal threshold value that consider a valid signal
+    offset : int
+        A sample offset as the before this offset maybe cause by other factor (if known) than the latency
 
     Returns
     -------
-    numpy.ndarray
-        The left trimmed array
+    results : list
+        A list of latency in sample per channel
+
     """
-
-    trimmed_waves = []
-    first_nonzero_sample = []
-    if not start:
-        for channel, i in zip(x, range(len(x))):
-            try:
-                first_nonzero_sample.append(np.where(channel != 0)[0][0])
-            except IndexError:
-                first_nonzero_sample.append(0)
-        # Use the lowest delay as reference.
-        start = min(first_nonzero_sample)
-    for channel in x:
-        trimmed_waves.append(channel[start:])
-    return np.ndarray(trimmed_waves)
-
-
+    if not isinstance(offset, int) or offset < 0:
+        raise AttributeError("offset must be positive int")
+    results = []
+    for ch in x:
+        where = np.where(np.abs(ch[offset:]) > threshold)
+        try:
+            results.append(where[0][0])
+        except IndexError:
+            raise ValueError(f"Couldn't find starting signal with given threshold {threshold} ")
+    return results
