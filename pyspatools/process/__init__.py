@@ -1,6 +1,6 @@
 import numpy as np
 
-__all__ = ['left_trim', 'lin_map']
+__all__ = ['left_trim']
 
 
 def left_trim(x, start=None):
@@ -36,27 +36,4 @@ def left_trim(x, start=None):
         trimmed_waves.append(channel[start:])
     return np.ndarray(trimmed_waves)
 
-
-def lin_map(x, in_min, in_max, out_min, out_max):
-    """
-    Linear mapping a scala
-    Parameters
-    ----------
-    x : float
-        input value
-    in_min : float
-        input's minimum value
-    in_max : float
-        input's maximum value
-    out_min : float
-        output's minimum value
-    out_max : float
-        output's maximum value
-
-    Returns
-    -------
-    float
-        mapped output
-    """
-    return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
 
