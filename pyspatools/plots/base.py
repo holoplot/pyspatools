@@ -122,7 +122,6 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
         b = b[:, ::downsample]
 
     ch = max((len(a), len(b)))
-    ch = 2
     diff = a - b
 
     if not single_channel:
