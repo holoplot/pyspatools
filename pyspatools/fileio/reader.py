@@ -2,6 +2,8 @@ import numpy as np
 import soundfile
 
 
+__all__ = ['read_file']
+
 def read_file(path: str, bitrate: int = 24, transpose: bool = True):
     """
     Read audio source. Return a list of all channels

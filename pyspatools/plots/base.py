@@ -5,8 +5,10 @@ import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
+__all__ = ['plot', 'ABplot']
 
-def set_ylim(bitdepth):
+
+def _set_ylim(bitdepth):
     if bitdepth.upper() == 'PCM24':
         ymin = PCM24_SIGNED_MIN
         ymax = PCM24_SIGNED_MAX
@@ -61,7 +63,7 @@ def plot(data: np.ndarray, wrap: int = 1, bitdepth: str = 'PCM24', **kwargs):
         ymin = -1.0
         ymax = 1.0
     else:
-        ymin, ymax = set_ylim(bitdepth)
+        ymin, ymax = _set_ylim(bitdepth)
     fig.update_yaxes(range=[ymin, ymax])
     fig.update_layout(showlegend=False)
 
@@ -114,7 +116,7 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
             ymin = -1.0
             ymax = 1.0
         else:
-            ymin, ymax = set_ylim(bitdepth)
+            ymin, ymax = _set_ylim(bitdepth)
 
     if downsample > 1:
         # This is to reduce data points for more faster plotting

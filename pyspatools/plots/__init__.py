@@ -1,3 +1,3 @@
-from .base import plot, ABplot
+from . import base
 
-__all__ = ['ABplot', 'plot']
+__all__ = ['base']
