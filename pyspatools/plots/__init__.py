@@ -1,3 +1,4 @@
-from . import base
+from .base import *
+from .spectrogram import *
 
-__all__ = ['base']
+__all__ = [s for s in dir() if not s.startswith('_')]
