@@ -1,6 +1,9 @@
+from typing import Optional
+import numpy as np
 from scipy.signal import stft as scistft
 
-__all__ = ['stft']
+
+__all__ = ['stft', 'spectrum']
 
 
 def stft(x, sr, window='hann', nperseg=256, noverlap=None,
@@ -72,3 +75,25 @@ def stft(x, sr, window='hann', nperseg=256, noverlap=None,
         Zxxs.append((Zxx))
 
     return freqs, times, Zxxs
+
+
+def spectrum(x: np.ndarray, n: Optional[int] = None):
+    """
+    Calculate the absolute spectrum of each channel
+
+    Parameters
+    ----------
+    x : numpy ndarray
+        Input multichannel audio signals.
+    n : int or None
+        If None (default), the length of fft is half of the signal, otherwise the transformation results in
+        half of n points.
+
+    Returns
+    -------
+    np.ndarray
+        An array of absolute fft spectrum for each channel
+
+    """
+    return np.array([np.abs(np.fft.rfft(ch, n=n)) for ch in x])
+
