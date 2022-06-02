@@ -26,7 +26,7 @@ def _set_ylim(bitdepth):
     return ymin, ymax
 
 
-def plot(data: np.ndarray, wrap: int = 1, bitdepth: str = 'PCM24', **kwargs):
+def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = 'PCM24', **kwargs):
     """
     A single figure of 1 audio source with a subplot for each channel.
     TODO Add time scale option, add track title
@@ -133,9 +133,9 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
         fig = make_subplots(rows=rows, cols=cols, shared_xaxes=True,
                             column_titles=(a_name, b_name, 'Diff'), row_titles=row_titles, **kwargs)
         for i in range(rows):
-            fig.add_trace(go.Scatter(y=a[i]), row=i + 1, col=1)
-            fig.add_trace(go.Scatter(y=b[i]), row=i + 1, col=2)
-            fig.add_trace(go.Scatter(y=diff[i]), row=i + 1, col=3)
+            fig.add_trace(go.Scatter(y=a[i], visible='legendonly'), row=i + 1, col=1)
+            fig.add_trace(go.Scatter(y=b[i], visible='legendonly'), row=i + 1, col=2)
+            fig.add_trace(go.Scatter(y=diff[i], visible='legendonly'), row=i + 1, col=3)
 
         fig.update_yaxes(range=[ymin, ymax])
         fig.update_layout(showlegend=False)
