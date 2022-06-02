@@ -1,3 +1,3 @@
-from .reader import read_file
+from . import reader
 
-__all__ = ['read_file']
+__all__ = ['reader']

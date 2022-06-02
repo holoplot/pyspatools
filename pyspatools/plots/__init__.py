@@ -1,3 +1,4 @@
-from .base import plot, ABplot
+from .base import *
+from .spectrogram import *
 
-__all__ = ['ABplot', 'plot']
+__all__ = [s for s in dir() if not s.startswith('_')]
