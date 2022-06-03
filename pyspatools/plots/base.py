@@ -28,7 +28,7 @@ def _set_ylim(bitdepth):
 
 
 def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
-         ylim : Optional[tuple, list] = None, xlim : Optional[tuple, list] = None,
+         ylim=None, xlim=None,
          logx : bool = False, logy : bool = False, **kwargs):
     """
     A single figure of 1 audio source with a subplot for each channel.
