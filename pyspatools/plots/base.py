@@ -1,4 +1,5 @@
 # This file contains plotting functions for all AB comparison
+from typing import Optional
 from ..helpers.const import *
 from math import ceil
 import numpy as np
@@ -26,7 +27,9 @@ def _set_ylim(bitdepth):
     return ymin, ymax
 
 
-def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = 'PCM24', **kwargs):
+def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
+         ylim : Optional[tuple, list] = None, xlim : Optional[tuple, list] = None,
+         logx : bool = False, logy : bool = False, **kwargs):
     """
     A single figure of 1 audio source with a subplot for each channel.
     TODO Add time scale option, add track title
@@ -59,12 +62,17 @@ def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = 'PCM24', **kwargs):
             if ch_idx < ch:
                 fig.add_trace(go.Scatter(y=data[ch_idx]), row=i + 1, col=j + 1)
 
-    if data.dtype == np.float32 or data.dtype == np.float64:
-        ymin = -1.0
-        ymax = 1.0
-    else:
+    if bitdepth and not ylim:
         ymin, ymax = _set_ylim(bitdepth)
-    fig.update_yaxes(range=[ymin, ymax])
+        fig.update_yaxes(range=[ymin, ymax])
+    elif ylim:
+        fig.update_yaxes(range=ylim)
+    if xlim:
+        fig.update_xaxes(range=xlim)
+    if logy:
+        fig.update_yaxes(type='log')
+    if logx:
+        fig.update_xaxes(type='log')
     fig.update_layout(showlegend=False)
 
     return fig
