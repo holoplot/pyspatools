@@ -4,6 +4,7 @@ import soundfile
 
 __all__ = ['read_file']
 
+
 def read_file(path: str, bitrate: int = 24, transpose: bool = True):
     """
     Read audio source. Return a list of all channels
@@ -34,3 +35,25 @@ def read_file(path: str, bitrate: int = 24, transpose: bool = True):
         source = np.transpose(np.right_shift(source, 8))
     return source, sr
 
+
+def write_file(x, path, sr, subtype='PCM_24'):
+    """
+    Write array to file based on soundfile.write()
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Signal array
+    path : str
+        File path with file name
+    sr : int
+        Sampling rate
+    subtype : str
+        Subtype options: FLOAT, PCM_16, PCM_24, PCM_32
+
+    Returns
+    -------
+    None
+
+    """
+    soundfile.write(path, x, sr, subtype=subtype)

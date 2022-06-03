@@ -1,3 +1,3 @@
-from . import reader
+from .file import *
 
-__all__ = ['reader']
+__all__ = [s for s in dir() if not s.startswith('_')]
