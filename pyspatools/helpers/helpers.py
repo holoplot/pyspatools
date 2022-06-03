@@ -8,8 +8,8 @@ def lin_map(x, in_min, in_max, out_min, out_max):
     Linear mapping a scala
     Parameters
     ----------
-    x : float
-        input value
+    x : numpy.ndarray
+        input signal array
     in_min : float
         input's minimum value
     in_max : float
@@ -21,7 +21,7 @@ def lin_map(x, in_min, in_max, out_min, out_max):
 
     Returns
     -------
-    float
+    numpy.ndarray
         mapped output
     """
     return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
