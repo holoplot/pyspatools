@@ -1,8 +1,9 @@
 from ..helpers.const import *
 import numpy as np
+import scipy.signal
 import pyloudnorm
 
-__all__ = ['latency', 'lkfs', 'pcm_to_float']
+__all__ = ['correlation', 'latency', 'lkfs', 'pcm_to_float']
 
 
 def pcm_to_float(x, bitdepth):
@@ -74,4 +75,30 @@ def lkfs(x, sr, bitdepth):
     x_float = pcm_to_float(x, bitdepth)
     meter = pyloudnorm.Meter(sr)
     return [meter.integrated_loudness(ch) for ch in x_float]
+
+
+def correlation(a, b, mode='full', method='auto'):
+
+    """
+    Compute the correlation and its corresponding lags
+    Parameters
+    ----------
+    a : numpy.ndarray
+    b : numpy.ndarray
+    mode : str
+    method : str
+
+    Returns
+    -------
+    corr
+    lags
+
+    """
+
+    corrs = []
+    lags = []
+    for ch_a, ch_b in zip(a, b):
+        corrs.append(scipy.signal.correlate(ch_a, ch_b, mode=mode, method=method))
+        lags.append(scipy.signal.correlation_lags(ch_a.size, ch_b.size, mode=mode))
+    return np.array(corrs, dtype=a.dtype), np.array(lags, dtype=np.int32)
 
