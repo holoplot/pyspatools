@@ -25,12 +25,13 @@ class Diff:
     @property
     def channel_max(self) -> np.ndarray:
         """An array of max value per channel"""
-        return np.amax(self.delta, axis=1)
+        return [np.where(np.abs(item) > self.tolerance)[0] for item in np.amax(self.delta, axis=1)]
 
     @property
     def channel_min(self) -> np.ndarray:
         """An array of min value per channel"""
-        return np.amin(self.delta, axis=1)
+        # return np.amin(self.delta, axis=1)
+        return [np.where(np.abs(item) > self.tolerance)[0] for item in np.amax(self.delta, axis=1)]
 
     @property
     def channel_max_indices(self) -> list:
