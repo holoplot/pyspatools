@@ -28,7 +28,7 @@ def _set_ylim(bitdepth):
 
 
 def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
-         ylim=None, xlim=None,
+         ylim=None, xlim=None, downsample=1,
          logx : bool = False, logy : bool = False, **kwargs):
     """
     A single figure of 1 audio source with a subplot for each channel.
@@ -49,6 +49,9 @@ def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
         The Plotly figure object
 
     """
+    if downsample > 1:
+        # This is to reduce data points for more faster plotting
+        data = data[:, ::downsample]
     ch = len(data)
     cols = wrap if wrap <= ch else ch
     rows = ceil(ch / cols)
