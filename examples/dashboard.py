@@ -1,25 +1,24 @@
 from pyspatools.plots.base import plot, ABplot
 from pyspatools.fileio import read_file
-from pyspatools.process import stft, lkfs, spectrum, Diff, latency
+from pyspatools.process import stft, lkfs, Diff, latency
 from pyspatools.plots import spectrogram
 from pyspatools.helpers import cosine, zero_padding
-import numpy as np
 import copy
 from dash import Dash, Input, Output, dcc, html
 
 sig, sr = read_file('./data/Test51.wav')
 sig2, _ = read_file('./data/Test51.wav')
+freqs_speech, times_speech, stfs_speech = stft(sig, sr)
+
 # Generate a cosine signal with dropouts
 cos = cosine(freq=100, channels=8, sr=sr, dtype='PCM24')
 cos = zero_padding(cos, front=sr//2)
-
 cos_reference = copy.copy(cos)
-cos[3, 40000:40900] = 0
-cos[4, 40000:40900] = 0
-cos[4, 400000:40300] = 0
-
-freqs_speech, times_speech, stfs_speech = stft(sig, sr)
+cos[3, 40000:40200] = 0
+cos[4, 40000:40200] = 0
+cos[4, 400000:40100] = 0
 freqs_cos, times_cos, stfs_cos = stft(cos, sr)
+
 speech_plots = {
     'a': plot(sig, wrap=2, downsample=6),
     'ab': ABplot(sig, sig2, downsample=6),
@@ -43,7 +42,7 @@ colors = {
 }
 
 dashboard.layout = html.Div([
-    html.H1("5.1 Audio Signals Comparison.", style={'text-align': 'center', 'color': colors['text']}),
+    html.H1("PySpaTools Demo", style={'text-align': 'center', 'color': colors['text']}),
     dcc.Dropdown(id='signal_selector', options=[
         {'label': '5.1 Test Audio', 'value': '5.1wav'},
         {'label': 'Cosine Wave', 'value': 'cosine'}
@@ -103,19 +102,19 @@ def update_layout(sig_selc_val, plt_selc_val):
     elif plt_selc_val == 'spectro':
         fig = plots[plt_idx]['spectro']
 
-    diff = Diff(a, b, sr)
+    tolerance = 0
+    diff = Diff(a, b, sr, tolerance=tolerance)
     _ = diff.channel_max
 
     loudness_a = lkfs(a, sr=sr, bitdepth='PCM24')
 
-    diff_delta_txt = f"Raw diff {diff.delta}"
-    diff_where_txt = f"Indices with diff {diff.delta}"
+    diff_delta_txt = f"Raw diff {diff.delta[diff.delta > tolerance]}"
+    diff_where_txt = f"Indices with diff {diff.where}"
     diff_channel_max_txt = f"Max Diff {diff.channel_max}"
     diff_channel_min_txt = f"Min Diff {diff.channel_min}"
 
     latency_a_txt = f"Observed Signal latency {latency_a}"
     loudness_a_txt = f"Observed Signal LKFS {loudness_a}"
-
 
     return fn_container_txt, fig, diff_delta_txt, diff_where_txt, diff_channel_max_txt, diff_channel_min_txt, latency_a_txt, loudness_a_txt
 
