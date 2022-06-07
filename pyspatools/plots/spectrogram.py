@@ -52,7 +52,7 @@ def spectrogram(data: list, freqs: list, times: list, wrap: int = 1, filename=""
 
 def ABspectrogram(stft_a, stft_b, freqs=None, times=None):
     """
-    TODO Add implementation
+    Not implemented yet
 
     Parameters
     ----------

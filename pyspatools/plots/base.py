@@ -32,7 +32,6 @@ def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
          logx : bool = False, logy : bool = False, **kwargs):
     """
     A single figure of 1 audio source with a subplot for each channel.
-    TODO Add time scale option, add track title
 
     Parameters
     ----------
@@ -49,6 +48,7 @@ def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
         The Plotly figure object
 
     """
+    # TODO Add time scale option, add track title
     if downsample > 1:
         # This is to reduce data points for more faster plotting
         data = data[:, ::downsample]
@@ -83,8 +83,6 @@ def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
 
 def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_channel=False, **kwargs):
     """
-    TODO. The performance of this is too slow for big amount of data point,
-        may consider to downsample.
     A straight forward A to B sample wide and channel wide comparison plot
 
     Parameters

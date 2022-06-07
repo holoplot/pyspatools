@@ -8,7 +8,6 @@ __all__ = ['read_file']
 def read_file(path: str, bitrate: int = 24, transpose: bool = True):
     """
     Read audio source. Return a list of all channels
-    TODO: Add support for other bitrate audio
 
     Parameters
     ----------
@@ -26,6 +25,7 @@ def read_file(path: str, bitrate: int = 24, transpose: bool = True):
     sr : int
         The sampling rate of the file
     """
+    # TODO: Add support for other bitrate audio
     if bitrate==24:
         _dtype = 'int32'
     else:
