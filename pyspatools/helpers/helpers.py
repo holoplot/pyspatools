@@ -1,6 +1,6 @@
 import numpy as np
 
-__all__ = ['lin_map', 'left_trim', 'db2amp', 'amp2db']
+__all__ = ['lin_map', 'right_trim', 'db2amp', 'amp2db']
 
 
 def lin_map(x, in_min, in_max, out_min, out_max):
@@ -25,23 +25,6 @@ def lin_map(x, in_min, in_max, out_min, out_max):
         mapped output
     """
     return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
-
-
-def left_trim(wav):
-    """
-    Left trim signal per channel to the first nonzero sample index. Use the minimal index across all channels
-    """
-    trimmed_waves = []
-    first_nonzero_sample = []
-    for channel, i in zip(wav, range(len(wav))):
-        try:
-            first_nonzero_sample.append(np.where(channel != 0)[0][0])
-        except IndexError:
-            first_nonzero_sample.append(0)
-    first_sample = min(first_nonzero_sample)
-    for channel in wav:
-        trimmed_waves.append(channel[first_sample:])
-    return np.vstack(trimmed_waves)
 
 
 def right_trim(x: np.ndarray, y: np.ndarray) -> tuple:

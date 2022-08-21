@@ -5,7 +5,7 @@ from .const import *
 __all__ = ['cosine', 'zero_padding']
 
 
-def _float_to_pcm(dtype):
+def _get_pcm_range(dtype):
     if dtype.upper() == 'PCM24':
         ymin = PCM24_SIGNED_MIN
         ymax = PCM24_SIGNED_MAX
@@ -51,7 +51,7 @@ def cosine(freq=440, amp_db=0.0, dur=1.0, sr=48000, channels=1, dtype='float64')
     if dtype.lower() == 'float32':
         sig = sig.astype(np.float32)
     elif 'pcm' in dtype.lower():
-        out_min, out_max = _float_to_pcm(dtype)
+        out_min, out_max = _get_pcm_range(dtype)
         sig = lin_map(x=sig, in_min=-1., in_max=1., out_min=out_min, out_max=out_max)
         sig = sig.astype(np.int32)
 
