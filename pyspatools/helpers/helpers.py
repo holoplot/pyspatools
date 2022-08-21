@@ -27,41 +27,37 @@ def lin_map(x, in_min, in_max, out_min, out_max):
     return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
 
 
-def left_trim(x, start=None):
+def left_trim(wav):
     """
-    Iterate through each channel, find the first non-zero sample. Pick the minimum value and
-    left trim all channels to that. This can removed any zero padding.
-
-    Parameters
-    ----------
-    x : numpy.ndarray
-        Multichannel array
-    start : int
-        If not None, instead of finding the first non zero sample, all channels trim to pos
-
-
-    Returns
-    -------
-    numpy.ndarray
-        The left trimmed array
+    Left trim signal per channel to the first nonzero sample index. Use the minimal index across all channels
     """
-
     trimmed_waves = []
     first_nonzero_sample = []
-    if not start:
-        for channel, i in zip(x, range(len(x))):
-            try:
-                first_nonzero_sample.append(np.where(channel != 0)[0][0])
-            except IndexError:
-                first_nonzero_sample.append(0)
-        # Use the lowest delay as reference.
-        start = min(first_nonzero_sample)
-    for channel in x:
-        trimmed_waves.append(channel[start:])
-    return np.ndarray(trimmed_waves)
+    for channel, i in zip(wav, range(len(wav))):
+        try:
+            first_nonzero_sample.append(np.where(channel != 0)[0][0])
+        except IndexError:
+            first_nonzero_sample.append(0)
+    first_sample = min(first_nonzero_sample)
+    for channel in wav:
+        trimmed_waves.append(channel[first_sample:])
+    return np.vstack(trimmed_waves)
 
 
-def db2amp(db):
+def right_trim(x: np.ndarray, y: np.ndarray) -> tuple:
+    """
+    Compare two signals and right trim to match the length to the smaller one
+    """
+    x_len = x.shape[1]
+    y_len = y.shape[1]
+    if x_len > y_len:
+        x = x[:, :y_len]
+    else:
+        y = y[:, :y_len]
+    return x, y
+
+
+def db2amp(db: float) -> float:
     """
     Convert db to amplitude
 
@@ -78,7 +74,7 @@ def db2amp(db):
     return 10 ** (db / 20.0)
 
 
-def amp2db(amp):
+def amp2db(amp: float) -> float:
     """
     Convert amplitude to db
 
