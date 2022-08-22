@@ -5,7 +5,7 @@ import pyloudnorm
 from scipy.signal import stft as scistft
 import soundfile
 
-from helpers.const import PCM8_SIGNED_MAX, PCM16_SIGNED_MAX, PCM24_SIGNED_MAX, PCM32_SIGNED_MAX
+from .helpers.const import PCM8_SIGNED_MAX, PCM16_SIGNED_MAX, PCM24_SIGNED_MAX, PCM32_SIGNED_MAX
 
 
 class AudioSignal():
@@ -21,8 +21,14 @@ class AudioSignal():
         """
         self.data = data
         self.sr = sr
-        self.channels = self.data.shape[0]
-        self.length = self.data.shape[1]
+
+    @property
+    def channels(self):
+        return self.data.shape[0]
+
+    @property
+    def length(self):
+        return self.data.shape[1]
 
     def left_trim(self):
         """
@@ -36,6 +42,7 @@ class AudioSignal():
                 first_nonzero_sample.append(0)
         start_idx = min(first_nonzero_sample)
         self.data = self.data[:, start_idx:]
+        return self
 
     def pcm_to_float(self, bitrate: int):
         if bitrate == 24:
@@ -209,7 +216,7 @@ class AudioFile(AudioSignal):
             raise AttributeError('Unsupported bitrate, currently: 24')
         data, sr = soundfile.read(file=path, dtype=_dtype, always_2d=True)
         if transpose:
-            data = np.transpose(np.right_shift(self.data, 8))
+            data = np.transpose(np.right_shift(data, 8))
         super().__init__(data, sr)
 
     def save(self, path: str):
