@@ -22,8 +22,7 @@ class AudioSignal():
         self.data = data
         self.sr = sr
         self.channels = self.data.shape[0]
-        self.lenght = self.data.shape[1]
-
+        self.length = self.data.shape[1]
 
     def left_trim(self):
         """
@@ -38,24 +37,21 @@ class AudioSignal():
         start_idx = min(first_nonzero_sample)
         self.data = self.data[:, start_idx:]
 
-    def pcm_to_float(self, inplace=False):
-        if self.bitrate == 24:
+    def pcm_to_float(self, bitrate: int):
+        if bitrate == 24:
             ymax = PCM24_SIGNED_MAX
-        elif self.bitrate == 16:
+        elif bitrate == 16:
             ymax = PCM16_SIGNED_MAX
-        elif self.bitrate == 32:
+        elif bitrate == 32:
             ymax = PCM32_SIGNED_MAX
-        elif self.bitrate == 8:
+        elif bitrate == 8:
             ymax = PCM8_SIGNED_MAX
         else:
             return self.data
         result = np.ndarray(shape=self.data.shape, dtype=np.float32)
         for i in range(len(self.data)):
             result[i, :] = self.data[i, :] / ymax
-        if inplace:
-            self.data = result
-        else:
-            return result
+        return result
 
     def stft(self, window='hann', nperseg=256, noverlap=None,
              nfft=None, detrend=False, return_onesided=True,
@@ -171,7 +167,7 @@ class AudioSignal():
         return results
 
 
-    def lkfs(self):
+    def lkfs(self, bitrate=None):
         """
         Loudness, K-weighted, relative to full scale implementation based on ITU-R BS.1770 standard.
         Credit: https://github.com/csteinmetz1/pyloudnorm
@@ -182,10 +178,14 @@ class AudioSignal():
             A list of scala for a single loudness value in dB per channel
 
         """
-        data_in_float = self.pcm_to_float(self.data, self.bitrate, inplace=False)
+        if bitrate:
+            data = self.pcm_to_float(bitrate)
+        else:
+            data = self.data
+
         meter = pyloudnorm.Meter(self.sr)
         
-        return [meter.integrated_loudness(ch) for ch in data_in_float]
+        return [meter.integrated_loudness(ch) for ch in data]
 
 
 class AudioFile(AudioSignal):
@@ -214,4 +214,5 @@ class AudioFile(AudioSignal):
 
     def save(self, path: str):
         soundfile.write(path, self.data, self.sr)
+
 
