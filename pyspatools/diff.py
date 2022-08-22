@@ -5,7 +5,18 @@ import numpy as np
 from .signal import AudioSignal, AudioFile
 
 
-__all__ = ['Diff']
+__all__ = ['Diff', 'right_trim']
+
+
+def right_trim(a: Union[AudioSignal, AudioFile], b: Union[AudioSignal, AudioFile]) -> tuple:
+    """
+    Compare two signals and right trim to match the length to the smaller one
+    """
+    if a.length > b.length:
+        a.data = a.data[:, :b.length]
+    else:
+        b.data = b.data[:, :a.length]
+    return a, b
 
 
 class Diff():
@@ -18,6 +29,8 @@ class Diff():
         self.sr = self.a.sr
         if self.a.channels != self.b.channels:
             raise AttributeError("a and b have different channels")
+        if self.a.length != self.b.length:
+            self.a, self.b = right_trim(self.a, self.b)
         self.channels = self.a.channels
         self.tolerance = tolerance
 

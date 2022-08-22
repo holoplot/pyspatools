@@ -1,6 +1,6 @@
 import numpy as np
 
-__all__ = ['lin_map', 'right_trim', 'db2amp', 'amp2db']
+__all__ = ['lin_map', 'db2amp', 'amp2db']
 
 
 def lin_map(x, in_min, in_max, out_min, out_max):
@@ -26,18 +26,6 @@ def lin_map(x, in_min, in_max, out_min, out_max):
     """
     return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
 
-
-def right_trim(x: np.ndarray, y: np.ndarray) -> tuple:
-    """
-    Compare two signals and right trim to match the length to the smaller one
-    """
-    x_len = x.shape[1]
-    y_len = y.shape[1]
-    if x_len > y_len:
-        x = x[:, :y_len]
-    else:
-        y = y[:, :y_len]
-    return x, y
 
 
 def db2amp(db: float) -> float:
