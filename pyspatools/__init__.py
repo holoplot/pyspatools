@@ -1,4 +1,4 @@
-from .helpers import *
+from .helpers import const, helpers
 from .plots import *
-from .signal import AudioFile, AudioSignal
+from .signal import AudioSignal
 from .diff import Diff

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import pyloudnorm
@@ -9,9 +9,13 @@ from .helpers.const import PCM8_SIGNED_MAX, PCM16_SIGNED_MAX, PCM24_SIGNED_MAX, 
 
 
 class AudioSignal():
-    def __init__(self, data: np.ndarray, sr: int):
+    def __init__(self, sig: Optional[np.ndarray] = None, from_file: Optional[str] = None, sr: int = 48000):
         """
         Base class for that holds the audio array and processing methods
+
+        :param sig: If numpy.ndarray, this will be the signal array. If str, this is a filepath that reads a 24bit PCM wav file
+        :param sr: Sampling rate
+
         Parameters
         ----------
         data : numpy.ndarray
@@ -19,29 +23,39 @@ class AudioSignal():
         sr : int
             Sampling rate
         """
-        self.data = data
         self.sr = sr
+        if sig is None and from_file is None:
+            raise AttributeError("Need either sig or from_file but found none")
+        elif sig is None and from_file:
+            # Currently only support PCM24
+            arry, sr = soundfile.read(file=from_file, dtype='int32', always_2d=True)
+            arry = np.transpose(np.right_shift(arry, 8))
+            self.sig = arry
+            self.sig = self.pcm_to_float(bitrate=24)
+        else:
+            self.sig = sig
+
 
     @property
     def channels(self):
-        return self.data.shape[0]
+        return self.sig.shape[0]
 
     @property
     def length(self):
-        return self.data.shape[1]
+        return self.sig.shape[1]
 
     def left_trim(self):
         """
         Left trim signal per channel to the first nonzero sample index. Use the minimal index across all channels. 
         """
         first_nonzero_sample = []
-        for channel in self.data:
+        for channel in self.sig:
             try:
                 first_nonzero_sample.append(np.where(channel != 0)[0][0])
             except IndexError:
                 first_nonzero_sample.append(0)
         start_idx = min(first_nonzero_sample)
-        self.data = self.data[:, start_idx:]
+        self.sig = self.sig[:, start_idx:]
         return self
 
     def pcm_to_float(self, bitrate: int):
@@ -54,10 +68,10 @@ class AudioSignal():
         elif bitrate == 8:
             ymax = PCM8_SIGNED_MAX
         else:
-            return self.data
-        result = np.ndarray(shape=self.data.shape, dtype=np.float32)
-        for i in range(len(self.data)):
-            result[i, :] = self.data[i, :] / ymax
+            return self.sig
+        result = np.ndarray(shape=self.sig.shape, dtype=np.float32)
+        for i in range(len(self.sig)):
+            result[i, :] = self.sig[i, :] / ymax
         return result
 
     def stft(self, window='hann', nperseg=256, noverlap=None,
@@ -115,7 +129,7 @@ class AudioSignal():
         times = []
         Zxxs = []
 
-        for each_ch in self.data:
+        for each_ch in self.sig:
             f, t, Zxx = scistft(each_ch, fs=self.sr, window=window, nperseg=nperseg,
                                 noverlap=noverlap, nfft=nfft, detrend=detrend,
                                 return_onesided=return_onesided, boundary=boundary,
@@ -142,7 +156,7 @@ class AudioSignal():
             An array of absolute fft spectrum for each channel
 
         """
-        return np.array([np.abs(np.fft.rfft(ch, n=n)) for ch in self.data])
+        return np.array([np.abs(np.fft.rfft(ch, n=n)) for ch in self.sig])
 
 
     def latency(self, threshold=0, offset=0) -> list:
@@ -165,7 +179,7 @@ class AudioSignal():
         if not isinstance(offset, int) or offset < 0:
             raise AttributeError("offset must be positive int")
         results = []
-        for ch in self.data:
+        for ch in self.sig:
             where = np.where(np.abs(ch[offset:]) > threshold)
             try:
                 results.append(where[0][0])
@@ -188,38 +202,37 @@ class AudioSignal():
         if bitrate:
             data = self.pcm_to_float(bitrate)
         else:
-            data = self.data
+            data = self.sig
 
         meter = pyloudnorm.Meter(self.sr)
         
         return [meter.integrated_loudness(ch) for ch in data]
 
-
-class AudioFile(AudioSignal):
-    def __init__(self, path: str, bitrate: int = 24, transpose: bool = True):
+    def zero_padding(self, front=0, back=0):
         """
-        This is the main object for pyspatool that load 
+        Pad signal per channel base on the amount of samples
 
         Parameters
         ----------
-        path : str
-            Path to audio source
-        bitrate : int
-            Bit rate, currently only support 24bit
-        transpose : bool
-            Whether to apply transpose to the read file signal.
+        x : numpy.ndarray
+            Signal array
+        front : int, optional
+            The amount of 0s to be added to the front
+        back : int, optional
+            The amount of 0s to be added to the back
+
         """
-        self.bitrate = bitrate
-        if self.bitrate==24:
-            _dtype = 'int32'
-        else:
-            raise AttributeError('Unsupported bitrate, currently: 24')
-        data, sr = soundfile.read(file=path, dtype=_dtype, always_2d=True)
-        if transpose:
-            data = np.transpose(np.right_shift(data, 8))
-        super().__init__(data, sr)
+        result = np.ndarray((self.sig.shape[0], self.sig.shape[1] + front + back), dtype=self.sig.dtype)
+        for i in range(self.sig.shape[0]):
+            result[i] = np.pad(self.sig[i], (front, back))
+        self.sig = result
 
     def save(self, path: str):
-        soundfile.write(path, self.data, self.sr)
+        """
+        Save signal to PCM24 format
+        """
+        if not path.endswith('.wav'):
+            raise AttributeError("Only accept .wav format in path")
+        soundfile.write(path, self.sig, self.sr, 'PCM_24')
 
 

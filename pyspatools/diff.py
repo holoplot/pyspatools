@@ -1,14 +1,12 @@
-from typing import Union
-
 import numpy as np
 
-from .signal import AudioSignal, AudioFile
+from .signal import AudioSignal
 
 
-__all__ = ['Diff', 'right_trim']
+__all__ = ['Diff', 'match_size']
 
 
-def right_trim(a: Union[AudioSignal, AudioFile], b: Union[AudioSignal, AudioFile]) -> tuple:
+def match_size(a: AudioSignal, b: AudioSignal) -> tuple:
     """
     Compare two signals and right trim to match the length to the smaller one
     """
@@ -20,7 +18,7 @@ def right_trim(a: Union[AudioSignal, AudioFile], b: Union[AudioSignal, AudioFile
 
 
 class Diff():
-    def __init__(self, a: Union[AudioSignal, AudioFile], b: Union[AudioSignal, AudioFile], tolerance: int = 0):
+    def __init__(self, a: AudioSignal, b: AudioSignal, tolerance: int = 0):
         """A Diff provide comparison between the AudioSignal of two inputs."""
         self.a = a
         self.b = b
@@ -30,10 +28,9 @@ class Diff():
         if self.a.channels != self.b.channels:
             raise AttributeError("a and b have different channels")
         if self.a.length != self.b.length:
-            self.a, self.b = right_trim(self.a, self.b)
+            self.a, self.b = match_size(self.a, self.b)
         self.channels = self.a.channels
         self.tolerance = tolerance
-
 
     @property
     def delta(self) -> np.ndarray:
@@ -43,10 +40,11 @@ class Diff():
     @property
     def where(self) -> list:
         """A list of indices where the absolute delta value is greater than tolerance per channel."""
-        if self.delta:
-            return [np.where(np.abs(ch_delta) > self.tolerance)[0] for ch_delta in self.delta]
-        else:
-            return []
+        return [list(np.where(np.abs(ch_delta) > self.tolerance)[0]) for ch_delta in self.delta]
+
+    @property
+    def within_tolerance(self):
+        return False if np.any(self.where) else True
 
     @property
     def channel_max(self) -> np.ndarray:

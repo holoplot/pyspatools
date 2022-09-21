@@ -1,6 +1,7 @@
 # This file contains plotting functions for all AB comparison
-from typing import Optional
+from typing import Union
 from ..helpers.const import *
+from ..signal import AudioSignal
 from math import ceil
 import numpy as np
 from plotly.subplots import make_subplots
@@ -9,7 +10,7 @@ import plotly.graph_objects as go
 __all__ = ['plot', 'ABplot']
 
 
-def _set_ylim(bitdepth):
+def _set_ylim(bitdepth: str) -> tuple:
     if bitdepth.upper() == 'PCM24':
         ymin = PCM24_SIGNED_MIN
         ymax = PCM24_SIGNED_MAX
@@ -27,7 +28,7 @@ def _set_ylim(bitdepth):
     return ymin, ymax
 
 
-def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
+def plot(x: Union[np.ndarray, AudioSignal], wrap : int = 1, bitdepth : Union[str, None] = None,
          ylim=None, xlim=None, downsample=1,
          logx : bool = False, logy : bool = False, **kwargs):
     """
@@ -35,7 +36,7 @@ def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
 
     Parameters
     ----------
-    data : numpy.ndarray
+    x : numpy.ndarray
         The signal array should be in [channels, data] format
     wrap : int
         The amount of subplot per column before it will be wrap to a new row.
@@ -48,11 +49,13 @@ def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
         The Plotly figure object
 
     """
+    if isinstance(x, AudioSignal):
+        x = x.data
     # TODO Add time scale option, add track title
     if downsample > 1:
         # This is to reduce data points for more faster plotting
-        data = data[:, ::downsample]
-    ch = len(data)
+        x = x[:, ::downsample]
+    ch = len(x)
     cols = wrap if wrap <= ch else ch
     rows = ceil(ch / cols)
     titles = [f'Ch{i + 1}' for i in range(ch)]
@@ -63,7 +66,7 @@ def plot(data: np.ndarray, wrap : int = 1, bitdepth : str = None,
         for j in range(cols):
             ch_idx = i * cols + j
             if ch_idx < ch:
-                fig.add_trace(go.Scatter(y=data[ch_idx]), row=i + 1, col=j + 1)
+                fig.add_trace(go.Scatter(y=x[ch_idx]), row=i + 1, col=j + 1)
 
     if bitdepth and not ylim:
         ymin, ymax = _set_ylim(bitdepth)
