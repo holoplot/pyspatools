@@ -35,10 +35,16 @@ class AudioSignal():
         else:
             self.sig = sig
 
-
     @property
     def channels(self):
         return self.sig.shape[0]
+
+    @property
+    def normalized_max(self):
+        max = []
+        for each_channel in self.sig:
+            max.append(np.max(np.abs(each_channel)))
+        return max
 
     @property
     def length(self):
@@ -188,11 +194,16 @@ class AudioSignal():
         return results
 
 
-    def lkfs(self, bitrate=None):
+    def lkfs(self, bitrate: Optional[int] = None):
         """
         Loudness, K-weighted, relative to full scale implementation based on ITU-R BS.1770 standard.
-        Credit: https://github.com/csteinmetz1/pyloudnorm
+        Credit: https://github.com/csteinmetz1/pyloudnorm.
 
+        Parameters
+        ----------
+        bitrate : int, optional
+            The loudness calculation only works with float signal to 1.0. So for PCM signal
+            the bitrate is required.
         Returns
         -------
         list
