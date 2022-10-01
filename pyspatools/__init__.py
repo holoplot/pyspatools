@@ -1,4 +1,4 @@
-from .fileio import *
-from .helpers import *
+from .helpers import const, helpers
 from .plots import *
-from .process import *
+from .signal import AudioSignal
+from .diff import Diff, match_size
