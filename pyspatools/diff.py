@@ -11,9 +11,9 @@ def match_size(a: AudioSignal, b: AudioSignal) -> tuple:
     Compare two signals and right trim to match the length to the smaller one
     """
     if a.length > b.length:
-        a.data = a.data[:, :b.length]
+        a.sig = a.sig[:, :b.length]
     else:
-        b.data = b.data[:, :a.length]
+        b.sig = b.sig[:, :a.length]
     return a, b
 
 
@@ -34,8 +34,8 @@ class Diff():
 
     @property
     def delta(self) -> np.ndarray:
-        """Element differences between the data of a and b"""
-        return self.a.data - self.b.data
+        """Element differences between the sig of a and b"""
+        return self.a.sig - self.b.sig
 
     @property
     def where(self) -> list:
