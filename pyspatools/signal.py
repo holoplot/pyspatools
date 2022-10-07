@@ -2,6 +2,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pyloudnorm
+from scipy import signal
 from scipy.signal import stft as scistft
 import soundfile
 
@@ -247,3 +248,58 @@ class AudioSignal():
         soundfile.write(path, self.sig, self.sr, 'PCM_24')
 
 
+    def iirfilter(
+        self,
+        cutoff_freqs,
+        btype="highpass",
+        ftype="butter",
+        order=4,
+        filter="lfilter",
+        rp=None,
+        rs=None,
+    ):
+        """iirfilter based on scipy.signal.iirfilter
+
+        Parameters
+        ----------
+        cutoff_freqs : float or [float, float]
+            Cutoff frequency or frequencies.
+        btype : str
+            Filter type (Default value = 'bandpass')
+        ftype : str
+            Tthe type of IIR filter. e.g. 'butter', 'cheby1', 'cheby2', 'elip', 'bessel' (Default value = 'butter')
+        order : int
+            Filter order (Default value = 4)
+        filter : str
+            The scipy.signal method to call when applying the filter coeffs to the signal.
+            by default it is set to scipy.signal.lfilter (one-dimensional).
+        rp : float
+            For Chebyshev and elliptic filters, provides the maximum ripple in the passband. (dB) (Default value = None)
+        rs : float
+            For Chebyshev and elliptic filters, provides the minimum attenuation in the stop band. (dB) (Default value = None)
+
+        Returns
+        -------
+        _ : Asig
+            new Asig with the filter applied. also you can access b, a coefficients by doing self._['b']
+            and self._['a']
+
+        """
+        # TODO scipy.signal.__getattribute__ error
+        Wn = np.array(cutoff_freqs) * 2 / self.sr
+        b, a = signal.iirfilter(
+            order, Wn, rp=rp, rs=rs, btype=btype, ftype=ftype)
+        return signal.__getattribute__(filter)(b, a, self.sig, axis=1)
+        
+
+    def find_peaks(self, height=None, threshold=None, distance=None, 
+                   prominence=None, width=None, wlen=None, 
+                   rel_height=0.5, plateau_size=None):
+        results = []
+        for i in range(self.channels):
+            results.append(signal.find_peaks(self.sig[i, :], height=None, 
+                                             threshold=None, distance=None, 
+                                             prominence=None, width=None, 
+                                             wlen=None, rel_height=0.5, 
+                                             plateau_size=None))
+        return results
