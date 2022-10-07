@@ -4,4 +4,3 @@ pyloudnorm==0.1.0
 scipy==1.8.1
 setuptools
 soundfile
-

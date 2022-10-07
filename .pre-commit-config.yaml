@@ -28,4 +28,3 @@ repos:
     rev: v0.981
     hooks:
     -   id: mypy
-
