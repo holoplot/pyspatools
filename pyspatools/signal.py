@@ -1,43 +1,64 @@
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
 import numpy as np
 import pyloudnorm
-from scipy import signal
-from scipy.signal import stft as scistft
+import scipy
 import soundfile
+from scipy import signal
 
-from .helpers.const import PCM8_SIGNED_MAX, PCM16_SIGNED_MAX, PCM24_SIGNED_MAX, PCM32_SIGNED_MAX
+from .helpers.const import PCM16_SIGNED_MAX
+from .helpers.const import PCM24_SIGNED_MAX
+from .helpers.const import PCM32_SIGNED_MAX
+from .helpers.const import PCM8_SIGNED_MAX
+
+
+def pcm_to_float(x: np.ndarray, bitrate: int) -> np.ndarray:
+    if bitrate == 24:
+        ymax = PCM24_SIGNED_MAX
+    elif bitrate == 16:
+        ymax = PCM16_SIGNED_MAX
+    elif bitrate == 32:
+        ymax = PCM32_SIGNED_MAX
+    elif bitrate == 8:
+        ymax = PCM8_SIGNED_MAX
+    else:
+        return x
+    result = np.ndarray(shape=x.shape, dtype=np.float32)
+    for i in range(len(x)):
+        result[i, :] = x[i, :] / ymax
+    return result
 
 
 class AudioSignal():
-    def __init__(self, sig: Optional[np.ndarray] = None, from_file: Optional[str] = None, sr: int = 48000):
+    def __init__(self, sig: Union[np.ndarray, str], sr: int = 48000):
         """
         Base class for that holds the audio array and processing methods
 
         :param sig: If numpy.ndarray, this will be the signal array. If str, this is a filepath that reads a 24bit PCM wav file
-        :param sr: Sampling rate
+        :param sr: Sampling rate. If sig is str, sr will be overwritten
 
-        Parameters
-        ----------
-        data : numpy.ndarray
-            Multi-channel array in the form of (channels, signals)
-        sr : int
-            Sampling rate
         """
         self.sr = sr
-        if sig is None and from_file is None:
-            raise AttributeError("Need either sig or from_file but found none")
-        elif sig is None and from_file:
+        if isinstance(sig, str):
             # Currently only support PCM24
-            arry, sr = soundfile.read(file=from_file, dtype='int32', always_2d=True)
+            arry, sr = soundfile.read(file=sig, dtype='int32', always_2d=True)
             arry = np.transpose(np.right_shift(arry, 8))
-            self.sig = arry
-            self.sig = self.pcm_to_float(bitrate=24)
+            self.sig = pcm_to_float(arry, bitrate=24)
+            self.sr = sr
         else:
             self.sig = sig
 
     @property
-    def channels(self):
+    def shape(self) -> tuple:
+        return self.sig.shape
+
+    @property
+    def dtype(self) -> np.dtype:
+        return self.sig.dtype
+
+    @property
+    def channels(self) -> int:
         return self.sig.shape[0]
 
     @property
@@ -53,7 +74,7 @@ class AudioSignal():
 
     def left_trim(self):
         """
-        Left trim signal per channel to the first nonzero sample index. Use the minimal index across all channels. 
+        Left trim signal per channel to the first nonzero sample index. Use the minimal index across all channels.
         """
         first_nonzero_sample = []
         for channel in self.sig:
@@ -64,22 +85,6 @@ class AudioSignal():
         start_idx = min(first_nonzero_sample)
         self.sig = self.sig[:, start_idx:]
         return self
-
-    def pcm_to_float(self, bitrate: int):
-        if bitrate == 24:
-            ymax = PCM24_SIGNED_MAX
-        elif bitrate == 16:
-            ymax = PCM16_SIGNED_MAX
-        elif bitrate == 32:
-            ymax = PCM32_SIGNED_MAX
-        elif bitrate == 8:
-            ymax = PCM8_SIGNED_MAX
-        else:
-            return self.sig
-        result = np.ndarray(shape=self.sig.shape, dtype=np.float32)
-        for i in range(len(self.sig)):
-            result[i, :] = self.sig[i, :] / ymax
-        return result
 
     def stft(self, window='hann', nperseg=256, noverlap=None,
              nfft=None, detrend=False, return_onesided=True,
@@ -137,13 +142,13 @@ class AudioSignal():
         Zxxs = []
 
         for each_ch in self.sig:
-            f, t, Zxx = scistft(each_ch, fs=self.sr, window=window, nperseg=nperseg,
+            f, t, Zxx = scipy.stft(each_ch, fs=self.sr, window=window, nperseg=nperseg,
                                 noverlap=noverlap, nfft=nfft, detrend=detrend,
                                 return_onesided=return_onesided, boundary=boundary,
                                 padded=padded, axis=0)
             freqs.append(f)
             times.append(t)
-            Zxxs.append((Zxx))
+            Zxxs.append(Zxx)
 
         return freqs, times, Zxxs
 
@@ -166,13 +171,13 @@ class AudioSignal():
         return np.array([np.abs(np.fft.rfft(ch, n=n)) for ch in self.sig])
 
 
-    def latency(self, threshold=0, offset=0) -> list:
+    def latency(self, threshold: float = 1.0, offset=0) -> list:
         """
         Iterate through each channel and returns first index that is over threshold value.
 
         Parameters
         ----------
-        threshold : int or float
+        threshold : float
             The signal threshold value that consider a valid signal
         offset : int
             A sample offset as the before this offset maybe cause by other factor (if known) than the latency
@@ -212,12 +217,12 @@ class AudioSignal():
 
         """
         if bitrate:
-            data = self.pcm_to_float(bitrate)
+            data = pcm_to_float(self.sig, bitrate)
         else:
             data = self.sig
 
         meter = pyloudnorm.Meter(self.sr)
-        
+
         return [meter.integrated_loudness(ch) for ch in data]
 
     def zero_padding(self, front=0, back=0):
@@ -290,16 +295,16 @@ class AudioSignal():
         b, a = signal.iirfilter(
             order, Wn, rp=rp, rs=rs, btype=btype, ftype=ftype)
         return signal.__getattribute__(filter)(b, a, self.sig, axis=1)
-        
 
-    def find_peaks(self, height=None, threshold=None, distance=None, 
-                   prominence=None, width=None, wlen=None, 
+
+    def find_peaks(self, height=None, threshold=None, distance=None,
+                   prominence=None, width=None, wlen=None,
                    rel_height=0.5, plateau_size=None):
         results = []
         for i in range(self.channels):
-            results.append(signal.find_peaks(self.sig[i, :], height=None, 
-                                             threshold=None, distance=None, 
-                                             prominence=None, width=None, 
-                                             wlen=None, rel_height=0.5, 
+            results.append(signal.find_peaks(self.sig[i, :], height=None,
+                                             threshold=None, distance=None,
+                                             prominence=None, width=None,
+                                             wlen=None, rel_height=0.5,
                                              plateau_size=None))
         return results
