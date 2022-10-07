@@ -1,11 +1,13 @@
 # This file contains plotting functions for all AB comparison
+from math import ceil
 from typing import Union
+
+import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
 from ..helpers.const import *
 from ..signal import AudioSignal
-from math import ceil
-import numpy as np
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 
 __all__ = ['plot', 'ABplot']
 
@@ -50,7 +52,7 @@ def plot(x: Union[np.ndarray, AudioSignal], wrap : int = 1, bitdepth : Union[str
 
     """
     if isinstance(x, AudioSignal):
-        x = x.data
+        x = x.sig
     # TODO Add time scale option, add track title
     if downsample > 1:
         # This is to reduce data points for more faster plotting
@@ -182,5 +184,3 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
         menu_content_list[0]['buttons'] = listener
         fig.update_layout(yaxis=dict(range=[ymin, ymax]), updatemenus=menu_content_list, showlegend=True)
     return fig
-
-

@@ -1,5 +1,6 @@
-import pytest
 import numpy as np
+import pytest
+
 from pyspatools.process import get_latency
 
 
