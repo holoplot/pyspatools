@@ -39,7 +39,7 @@ def plot(x: Union[np.ndarray, AudioSignal], wrap : int = 1, bitdepth : Union[str
     Parameters
     ----------
     x : numpy.ndarray
-        The signal array should be in [channels, data] format
+        The signal array
     wrap : int
         The amount of subplot per column before it will be wrap to a new row.
     bitdepth : str
@@ -57,7 +57,7 @@ def plot(x: Union[np.ndarray, AudioSignal], wrap : int = 1, bitdepth : Union[str
     if downsample > 1:
         # This is to reduce data points for more faster plotting
         x = x[:, ::downsample]
-    ch = len(x)
+    ch = x.shape[1]
     cols = wrap if wrap <= ch else ch
     rows = ceil(ch / cols)
     titles = [f'Ch{i + 1}' for i in range(ch)]
@@ -68,7 +68,7 @@ def plot(x: Union[np.ndarray, AudioSignal], wrap : int = 1, bitdepth : Union[str
         for j in range(cols):
             ch_idx = i * cols + j
             if ch_idx < ch:
-                fig.add_trace(go.Scatter(y=x[ch_idx]), row=i + 1, col=j + 1)
+                fig.add_trace(go.Scatter(y=x[:, ch_idx]), row=i + 1, col=j + 1)
 
     if bitdepth and not ylim:
         ymin, ymax = _set_ylim(bitdepth)
@@ -134,10 +134,10 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
 
     if downsample > 1:
         # This is to reduce data points for more faster plotting
-        a = a[:, ::downsample]
-        b = b[:, ::downsample]
+        a = a[::downsample, :]
+        b = b[::downsample, :]
 
-    ch = max((len(a), len(b)))
+    ch = max((a.shape[1], b.shape[1]))
     diff = a - b
 
     if not single_channel:
@@ -147,9 +147,9 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
         fig = make_subplots(rows=rows, cols=cols, shared_xaxes=True,
                             column_titles=(a_name, b_name, 'Diff'), row_titles=row_titles, **kwargs)
         for i in range(rows):
-            fig.add_trace(go.Scatter(y=a[i]), row=i + 1, col=1)
-            fig.add_trace(go.Scatter(y=b[i]), row=i + 1, col=2)
-            fig.add_trace(go.Scatter(y=diff[i]), row=i + 1, col=3)
+            fig.add_trace(go.Scatter(y=a[:, i]), row=i + 1, col=1)
+            fig.add_trace(go.Scatter(y=b[:, i]), row=i + 1, col=2)
+            fig.add_trace(go.Scatter(y=diff[:, i]), row=i + 1, col=3)
 
         fig.update_yaxes(range=[ymin, ymax])
         fig.update_layout(showlegend=False)
@@ -159,9 +159,9 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
         # TODO Enable default display to be on the first channel
         fig = go.Figure()
         for i in range(ch):
-            fig.add_trace(go.Scatter(y=a[i], visible=False, name=f'A_Ch{i+1}'))
-            fig.add_trace(go.Scatter(y=b[i], visible=False, name=f'B_Ch{i+1}'))
-            fig.add_trace(go.Scatter(y=diff[i], visible=False, name=f'Diff_Ch{i+1}'))
+            fig.add_trace(go.Scatter(y=a[:, i], visible=False, name=f'A_Ch{i+1}'))
+            fig.add_trace(go.Scatter(y=b[:, i], visible=False, name=f'B_Ch{i+1}'))
+            fig.add_trace(go.Scatter(y=diff[:, i], visible=False, name=f'Diff_Ch{i+1}'))
 
         menu_content_list = [
             dict(

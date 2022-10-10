@@ -42,7 +42,7 @@ def _convert_dtype(sig, dtype):
         sig = lin_map(x=sig, in_min=-1., in_max=1., out_min=out_min, out_max=out_max)
         sig = sig.astype(np.int32)
 
-    return sig.reshape((1, sig.shape[0]))
+    return sig.reshape((sig.shape[0], 1))
 
 
 def cos(freq=440, amp=1.0, dur=1.0, sr=48000, dtype='float32'):

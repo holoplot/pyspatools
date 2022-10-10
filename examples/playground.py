@@ -15,7 +15,7 @@ sig2 = AudioSignal('./data/Test51.wav')
 
 sig2.sig = sig2.sig + np.random.rand(sig2.shape[0], sig2.shape[1]).astype(sig2.dtype)
 
-fig = plot(x=sig.sig[:5], wrap=2) # fig.show() to display
+fig = plot(x=sig.sig[:, :5], wrap=2) # fig.show() to display
 fig.show()
 
 # STFT
@@ -37,4 +37,4 @@ diffs = Diff(sig, sig2, tolerance=4)
 cos = siggen.cos(freq=100, sr=44100)
 cos.zero_padding(front=1000, back=1000)
 cos_clean = copy.copy(cos)
-cos.sig[0, 10000:10900] = 0
+cos.sig[10000:10900, 0] = 0
