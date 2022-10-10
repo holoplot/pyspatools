@@ -1,5 +1,6 @@
 from typing import Optional
 from typing import Union
+from warnings import warn
 
 import numpy as np
 import pyloudnorm
@@ -262,3 +263,14 @@ class AudioSignal():
                                              wlen=None, rel_height=0.5,
                                              plateau_size=None))
         return results
+
+    def to_mono(self):
+        """
+        Mix channels to mono signal. Perform sig = np.sum(self.sig_copy, axis=1)
+
+        """
+        if self.channels == 1:
+            warn("Signal is already mono")
+        else:
+            blend = [1 / self.channels] * self.channels
+            self.sig = np.sum(self.sig * blend, axis=1)
