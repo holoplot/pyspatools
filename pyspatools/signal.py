@@ -83,7 +83,7 @@ class AudioSignal():
             except IndexError:
                 first_nonzero_sample.append(0)
         start_idx = min(first_nonzero_sample)
-        self.sig = self.sig[:, start_idx:]
+        self.sig = self.sig[start_idx:, :]
         return self
 
     def stft(self, window='hann', nperseg=256, noverlap=None,
@@ -247,8 +247,8 @@ class AudioSignal():
             order, Wn, rp=rp, rs=rs, btype=btype, ftype=ftype)
         return signal.__getattribute__(filter)(b, a, self.sig, axis=0)
 
-
-    def find_peaks(self, height=None, threshold=None, distance=None,
+    @staticmethod
+    def find_peaks(x, height=None, threshold=None, distance=None,
                    prominence=None, width=None, wlen=None,
                    rel_height=0.5, plateau_size=None) -> list:
         """
@@ -256,12 +256,16 @@ class AudioSignal():
         scipy.signal.find_peaks: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
         """
         results = []
-        for i in range(self.channels):
-            results.append(signal.find_peaks(self.sig[:, 0], height=None,
-                                             threshold=None, distance=None,
-                                             prominence=None, width=None,
-                                             wlen=None, rel_height=0.5,
-                                             plateau_size=None))
+
+        if isinstance(x, AudioSignal):
+            x = x.sig
+
+        for i in range(x.shape[1]):
+            results.append(signal.find_peaks(x[:, i], height=height,
+                                             threshold=threshold, distance=distance,
+                                             prominence=prominence, width=width,
+                                             wlen=wlen, rel_height=rel_height,
+                                             plateau_size=plateau_size)[0])
         return results
 
     def to_mono(self):
@@ -274,3 +278,11 @@ class AudioSignal():
         else:
             blend = [1 / self.channels] * self.channels
             self.sig = np.sum(self.sig * blend, axis=1)
+
+    def glitch_detection(self, cutoff_freq, height=None, threshold=None, distance=None, remove_onset_offset=False):
+        """
+        Detect glitches of a signal based using a highpass filter and find_peaks method from
+        scipy.signal
+        """
+        filtered = self.iirfilter(cutoff_freqs=cutoff_freq, btype="highpass")
+        return self.find_peaks(x=filtered, height=height, threshold=threshold, distance=distance)
