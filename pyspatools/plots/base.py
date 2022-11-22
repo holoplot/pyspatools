@@ -9,30 +9,38 @@ from plotly.subplots import make_subplots
 from ..helpers.const import *
 from ..signal import AudioSignal
 
-__all__ = ['plot', 'ABplot']
+__all__ = ["plot", "ABplot"]
 
 
 def _set_ylim(bitdepth: str) -> tuple:
-    if bitdepth.upper() == 'PCM24':
+    if bitdepth.upper() == "PCM24":
         ymin = PCM24_SIGNED_MIN
         ymax = PCM24_SIGNED_MAX
-    elif bitdepth.upper() == 'PCM16':
+    elif bitdepth.upper() == "PCM16":
         ymin = PCM16_SIGNED_MIN
         ymax = PCM16_SIGNED_MAX
-    elif bitdepth.upper() == 'PCM32':
+    elif bitdepth.upper() == "PCM32":
         ymin = PCM32_SIGNED_MIN
         ymax = PCM32_SIGNED_MAX
-    elif bitdepth.upper() == 'PCM8':
+    elif bitdepth.upper() == "PCM8":
         ymin = PCM8_SIGNED_MIN
         ymax = PCM8_SIGNED_MAX
     else:
-        raise AttributeError('Unsupported bitdepth')
+        raise AttributeError("Unsupported bitdepth")
     return ymin, ymax
 
 
-def plot(x: Union[np.ndarray, AudioSignal], wrap : int = 1, bitdepth : Union[str, None] = None,
-         ylim=None, xlim=None, downsample=1,
-         logx : bool = False, logy : bool = False, **kwargs):
+def plot(
+    x: Union[np.ndarray, AudioSignal],
+    wrap: int = 1,
+    bitdepth: Union[str, None] = None,
+    ylim=None,
+    xlim=None,
+    downsample=1,
+    logx: bool = False,
+    logy: bool = False,
+    **kwargs,
+):
     """
     A single figure of 1 audio source with a subplot for each channel.
 
@@ -60,9 +68,10 @@ def plot(x: Union[np.ndarray, AudioSignal], wrap : int = 1, bitdepth : Union[str
     ch = x.shape[1]
     cols = wrap if wrap <= ch else ch
     rows = ceil(ch / cols)
-    titles = [f'Ch{i + 1}' for i in range(ch)]
-    fig = make_subplots(rows=rows, cols=wrap, shared_xaxes=False,
-                        subplot_titles=titles, **kwargs)
+    titles = [f"Ch{i + 1}" for i in range(ch)]
+    fig = make_subplots(
+        rows=rows, cols=wrap, shared_xaxes=False, subplot_titles=titles, **kwargs
+    )
 
     for i in range(rows):
         for j in range(cols):
@@ -78,15 +87,24 @@ def plot(x: Union[np.ndarray, AudioSignal], wrap : int = 1, bitdepth : Union[str
     if xlim:
         fig.update_xaxes(range=xlim)
     if logy:
-        fig.update_yaxes(type='log')
+        fig.update_yaxes(type="log")
     if logx:
-        fig.update_xaxes(type='log')
+        fig.update_xaxes(type="log")
     fig.update_layout(showlegend=False)
 
     return fig
 
 
-def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_channel=False, **kwargs):
+def ABplot(
+    a,
+    b,
+    a_name="A",
+    b_name="B",
+    bitdepth="PCM24",
+    downsample=1,
+    single_channel=False,
+    **kwargs,
+):
     """
     A straight forward A to B sample wide and channel wide comparison plot
 
@@ -115,6 +133,7 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
         The Plotly figure object
 
     """
+
     def _visibility_mask(i, ch):
         column_count = 3  # A, B, Diff
         result = [False] * ch * column_count
@@ -143,9 +162,15 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
     if not single_channel:
         rows = ch
         cols = 3  # A, B, Diff
-        row_titles = [f'Ch{i + 1}' for i in range(ch)]
-        fig = make_subplots(rows=rows, cols=cols, shared_xaxes=True,
-                            column_titles=(a_name, b_name, 'Diff'), row_titles=row_titles, **kwargs)
+        row_titles = [f"Ch{i + 1}" for i in range(ch)]
+        fig = make_subplots(
+            rows=rows,
+            cols=cols,
+            shared_xaxes=True,
+            column_titles=(a_name, b_name, "Diff"),
+            row_titles=row_titles,
+            **kwargs,
+        )
         for i in range(rows):
             fig.add_trace(go.Scatter(y=a[:, i]), row=i + 1, col=1)
             fig.add_trace(go.Scatter(y=b[:, i]), row=i + 1, col=2)
@@ -159,28 +184,34 @@ def ABplot(a, b, a_name='A', b_name='B', bitdepth='PCM24', downsample=1, single_
         # TODO Enable default display to be on the first channel
         fig = go.Figure()
         for i in range(ch):
-            fig.add_trace(go.Scatter(y=a[:, i], visible=False, name=f'A_Ch{i+1}'))
-            fig.add_trace(go.Scatter(y=b[:, i], visible=False, name=f'B_Ch{i+1}'))
-            fig.add_trace(go.Scatter(y=diff[:, i], visible=False, name=f'Diff_Ch{i+1}'))
+            fig.add_trace(go.Scatter(y=a[:, i], visible=False, name=f"A_Ch{i+1}"))
+            fig.add_trace(go.Scatter(y=b[:, i], visible=False, name=f"B_Ch{i+1}"))
+            fig.add_trace(go.Scatter(y=diff[:, i], visible=False, name=f"Diff_Ch{i+1}"))
 
         menu_content_list = [
             dict(
-                direction='down',
-                pad={'r': 10, 't': 10},
+                direction="down",
+                pad={"r": 10, "t": 10},
                 showactive=True,
                 x=0,
-                xanchor='left',
+                xanchor="left",
                 y=1.2,
-                yanchor='top'
+                yanchor="top",
             ),
         ]
         listener = []
         for ch_idx in range(ch):
-            listener.append(dict(
-                args=[{'visible': _visibility_mask(ch_idx, ch)}],
-                label=f'Ch{ch_idx+1}',
-                method='restyle'
-            ))
-        menu_content_list[0]['buttons'] = listener
-        fig.update_layout(yaxis=dict(range=[ymin, ymax]), updatemenus=menu_content_list, showlegend=True)
+            listener.append(
+                dict(
+                    args=[{"visible": _visibility_mask(ch_idx, ch)}],
+                    label=f"Ch{ch_idx+1}",
+                    method="restyle",
+                )
+            )
+        menu_content_list[0]["buttons"] = listener
+        fig.update_layout(
+            yaxis=dict(range=[ymin, ymax]),
+            updatemenus=menu_content_list,
+            showlegend=True,
+        )
     return fig

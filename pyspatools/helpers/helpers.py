@@ -1,6 +1,6 @@
 import numpy as np
 
-__all__ = ['lin_map', 'db2amp', 'amp2db']
+__all__ = ["lin_map", "db2amp", "amp2db"]
 
 
 def lin_map(x, in_min, in_max, out_min, out_max):
@@ -25,7 +25,6 @@ def lin_map(x, in_min, in_max, out_min, out_max):
         mapped output
     """
     return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
-
 
 
 def db2amp(db: float) -> float:

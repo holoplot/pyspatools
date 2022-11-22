@@ -29,7 +29,7 @@ def pcm_to_float(x: np.ndarray, bitrate: int) -> np.ndarray:
     return result
 
 
-class AudioSignal():
+class AudioSignal:
     def __init__(self, sig: Union[np.ndarray, str], sr: int = 48000):
         """
         Base class for that holds the audio array and processing methods
@@ -42,7 +42,7 @@ class AudioSignal():
         self.sr = sr
         if isinstance(sig, str):
             # Currently only support PCM24
-            arry, sr = soundfile.read(file=sig, dtype='int32', always_2d=True)
+            arry, sr = soundfile.read(file=sig, dtype="int32", always_2d=True)
             arry = np.right_shift(arry, 8)
             self.sig = pcm_to_float(arry, bitrate=24)
             self.sr = sr
@@ -87,9 +87,17 @@ class AudioSignal():
         self.sig = self.sig[:, start_idx:]
         return self
 
-    def stft(self, window='hann', nperseg=256, noverlap=None,
-             nfft=None, detrend=False, return_onesided=True,
-             boundary='zeros', padded=True) -> tuple:
+    def stft(
+        self,
+        window="hann",
+        nperseg=256,
+        noverlap=None,
+        nfft=None,
+        detrend=False,
+        return_onesided=True,
+        boundary="zeros",
+        padded=True,
+    ) -> tuple:
         """
         Compute Short Time Fourier Transform using scipy.signal.stft for all channels
 
@@ -134,10 +142,19 @@ class AudioSignal():
         Zxxs = []
 
         for i in range(self.channels):
-            f, t, Zxx = signal.stft(self.sig[:, i], fs=self.sr, window=window, nperseg=nperseg,
-                                noverlap=noverlap, nfft=nfft, detrend=detrend,
-                                return_onesided=return_onesided, boundary=boundary,
-                                padded=padded, axis=0)
+            f, t, Zxx = signal.stft(
+                self.sig[:, i],
+                fs=self.sr,
+                window=window,
+                nperseg=nperseg,
+                noverlap=noverlap,
+                nfft=nfft,
+                detrend=detrend,
+                return_onesided=return_onesided,
+                boundary=boundary,
+                padded=padded,
+                axis=0,
+            )
             freqs.append(f)
             times.append(t)
             Zxxs.append(Zxx)
@@ -153,8 +170,9 @@ class AudioSignal():
         :returns: An array of absolute fft spectrum for each channel
 
         """
-        return np.array([np.abs(np.fft.rfft(self.sig[:, i], n=n)) for i in range(self.sig.shape[1])])
-
+        return np.array(
+            [np.abs(np.fft.rfft(self.sig[:, i], n=n)) for i in range(self.sig.shape[1])]
+        )
 
     def latency(self, threshold: float = 1.0, offset=0) -> list:
         """
@@ -172,9 +190,10 @@ class AudioSignal():
             try:
                 results.append(where[0][0])
             except IndexError:
-                raise ValueError(f"Couldn't find starting signal with given threshold {threshold} ")
+                raise ValueError(
+                    f"Couldn't find starting signal with given threshold {threshold} "
+                )
         return results
-
 
     def lkfs(self, bitrate: Optional[int] = None) -> list:
         """
@@ -201,7 +220,9 @@ class AudioSignal():
         :param front: The amount of 0s to be added to the front
         :param back: The amount of 0s to be added to the back
         """
-        result = np.ndarray((self.sig.shape[0] + front + back, self.sig.shape[1]), dtype=self.sig.dtype)
+        result = np.ndarray(
+            (self.sig.shape[0] + front + back, self.sig.shape[1]), dtype=self.sig.dtype
+        )
         for i in range(self.channels):
             result[:, i] = np.pad(self.sig[:, i], (front, back))
         self.sig = result
@@ -212,9 +233,9 @@ class AudioSignal():
 
         :param path: File path of the output file.
         """
-        if not path.endswith('.wav'):
+        if not path.endswith(".wav"):
             raise AttributeError("Only accept .wav format in path")
-        soundfile.write(path, self.sig, self.sr, 'PCM_24')
+        soundfile.write(path, self.sig, self.sr, "PCM_24")
 
     def iirfilter(
         self,
@@ -243,22 +264,37 @@ class AudioSignal():
         """
         # TODO scipy.signal.__getattribute__ error
         Wn = np.array(cutoff_freqs) * 2 / self.sr
-        b, a = signal.iirfilter(
-            order, Wn, rp=rp, rs=rs, btype=btype, ftype=ftype)
+        b, a = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, ftype=ftype)
         return getattr(signal, filter)(b, a, self.sig, axis=0)
 
-    def find_peaks(self, height=None, threshold=None, distance=None,
-                   prominence=None, width=None, wlen=None,
-                   rel_height=0.5, plateau_size=None) -> list:
+    def find_peaks(
+        self,
+        height=None,
+        threshold=None,
+        distance=None,
+        prominence=None,
+        width=None,
+        wlen=None,
+        rel_height=0.5,
+        plateau_size=None,
+    ) -> list:
         """
         Take the sig array and return a list of peaks for each channel. Please refer to
         scipy.signal.find_peaks: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
         """
         results = []
         for i in range(self.channels):
-            results.append(signal.find_peaks(self.sig[:, i], height=height,
-                                             threshold=threshold, distance=distance,
-                                             prominence=prominence, width=width,
-                                             wlen=wlen, rel_height=rel_height,
-                                             plateau_size=plateau_size))
+            results.append(
+                signal.find_peaks(
+                    self.sig[:, i],
+                    height=height,
+                    threshold=threshold,
+                    distance=distance,
+                    prominence=prominence,
+                    width=width,
+                    wlen=wlen,
+                    rel_height=rel_height,
+                    plateau_size=plateau_size,
+                )
+            )
         return results
