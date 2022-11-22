@@ -34,7 +34,8 @@ class AudioSignal():
         """
         Base class for that holds the audio array and processing methods
 
-        :param sig: If numpy.ndarray, this will be the signal array. If str, this is a filepath that reads a 24bit PCM wav file
+        :param sig: If numpy.ndarray, this will be the signal array. If str,
+            this is a filepath that reads a 24bit PCM wav file
         :param sr: Sampling rate. If sig is str, sr will be overwritten
 
         """
@@ -73,7 +74,8 @@ class AudioSignal():
 
     def left_trim(self):
         """
-        Left trim signal per channel to the first nonzero sample index. Use the minimal index across all channels.
+        Left trim signal per channel to the first nonzero sample index.
+            Use the minimal index across all channels.
         """
         first_nonzero_sample = []
         for i in range(self.channels):
@@ -214,7 +216,6 @@ class AudioSignal():
             raise AttributeError("Only accept .wav format in path")
         soundfile.write(path, self.sig, self.sr, 'PCM_24')
 
-
     def iirfilter(
         self,
         cutoff_freqs,
@@ -244,8 +245,7 @@ class AudioSignal():
         Wn = np.array(cutoff_freqs) * 2 / self.sr
         b, a = signal.iirfilter(
             order, Wn, rp=rp, rs=rs, btype=btype, ftype=ftype)
-        return signal.__getattribute__(filter)(b, a, self.sig, axis=0)
-
+        return getattr(signal, filter)(b, a, self.sig, axis=0)
 
     def find_peaks(self, height=None, threshold=None, distance=None,
                    prominence=None, width=None, wlen=None,
@@ -256,9 +256,9 @@ class AudioSignal():
         """
         results = []
         for i in range(self.channels):
-            results.append(signal.find_peaks(self.sig[:, 0], height=None,
-                                             threshold=None, distance=None,
-                                             prominence=None, width=None,
-                                             wlen=None, rel_height=0.5,
-                                             plateau_size=None))
+            results.append(signal.find_peaks(self.sig[:, i], height=height,
+                                             threshold=threshold, distance=distance,
+                                             prominence=prominence, width=width,
+                                             wlen=wlen, rel_height=rel_height,
+                                             plateau_size=plateau_size))
         return results
