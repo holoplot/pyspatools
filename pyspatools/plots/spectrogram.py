@@ -4,10 +4,12 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-__all__ = ['spectrogram', 'ABspectrogram']
+__all__ = ["spectrogram", "ABspectrogram"]
 
 
-def spectrogram(data: list, freqs: list, times: list, wrap: int = 1, filename="", **kwargs):
+def spectrogram(
+    data: list, freqs: list, times: list, wrap: int = 1, filename="", **kwargs
+):
     """
     Multichannel spectrogram as a form of heatmap
     Parameters
@@ -31,9 +33,15 @@ def spectrogram(data: list, freqs: list, times: list, wrap: int = 1, filename=""
     ch = len(data)
     cols = wrap if wrap <= ch else ch
     rows = ceil(ch / cols)
-    titles = [f'Ch{i + 1}' for i in range(ch)]
-    fig = make_subplots(rows=rows, cols=wrap, shared_xaxes=True, shared_yaxes=True,
-                        subplot_titles=titles, **kwargs)
+    titles = [f"Ch{i + 1}" for i in range(ch)]
+    fig = make_subplots(
+        rows=rows,
+        cols=wrap,
+        shared_xaxes=True,
+        shared_yaxes=True,
+        subplot_titles=titles,
+        **kwargs,
+    )
 
     for i in range(rows):
         for j in range(cols):
@@ -42,12 +50,15 @@ def spectrogram(data: list, freqs: list, times: list, wrap: int = 1, filename=""
                 z = np.abs(data[ch_idx])
                 x = times[ch_idx]
                 y = freqs[ch_idx]
-                fig.add_trace(go.Heatmap(z=z, x=x, y=y, colorscale='Viridis'),
-                              row=i + 1, col=j + 1)
+                fig.add_trace(
+                    go.Heatmap(z=z, x=x, y=y, colorscale="Viridis"),
+                    row=i + 1,
+                    col=j + 1,
+                )
 
-    fig.update_xaxes(title='Time')
-    fig.update_yaxes(title='Frequency', type='log')
-    fig.update_layout(title=f'Spectrogram {filename}')
+    fig.update_xaxes(title="Time")
+    fig.update_yaxes(title="Frequency", type="log")
+    fig.update_layout(title=f"Spectrogram {filename}")
     return fig
 
 

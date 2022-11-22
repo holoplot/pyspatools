@@ -5,24 +5,24 @@ from .helpers import lin_map
 from .helpers.const import *
 from .signal import AudioSignal
 
-__all__ = ['cos', 'sin', 'sawtooth', 'pink']
+__all__ = ["cos", "sin", "sawtooth", "pink"]
 
 
 def _get_pcm_range(dtype):
-    if dtype.upper() == 'PCM24':
+    if dtype.upper() == "PCM24":
         ymin = PCM24_SIGNED_MIN
         ymax = PCM24_SIGNED_MAX
-    elif dtype.upper() == 'PCM16':
+    elif dtype.upper() == "PCM16":
         ymin = PCM16_SIGNED_MIN
         ymax = PCM16_SIGNED_MAX
-    elif dtype.upper() == 'PCM32':
+    elif dtype.upper() == "PCM32":
         ymin = PCM32_SIGNED_MIN
         ymax = PCM32_SIGNED_MAX
-    elif dtype.upper() == 'PCM8':
+    elif dtype.upper() == "PCM8":
         ymin = PCM8_SIGNED_MIN
         ymax = PCM8_SIGNED_MAX
     else:
-        raise AttributeError('Unsupported dtype')
+        raise AttributeError("Unsupported dtype")
     return ymin, ymax
 
 
@@ -35,17 +35,17 @@ def _normalize(x):
 
 
 def _convert_dtype(sig, dtype):
-    if dtype.lower() == 'float32':
+    if dtype.lower() == "float32":
         sig = sig.astype(np.float32)
-    elif 'pcm' in dtype.lower():
+    elif "pcm" in dtype.lower():
         out_min, out_max = _get_pcm_range(dtype)
-        sig = lin_map(x=sig, in_min=-1., in_max=1., out_min=out_min, out_max=out_max)
+        sig = lin_map(x=sig, in_min=-1.0, in_max=1.0, out_min=out_min, out_max=out_max)
         sig = sig.astype(np.int32)
 
     return sig.reshape((sig.shape[0], 1))
 
 
-def cos(freq=440, amp=1.0, dur=1.0, sr=48000, dtype='float32'):
+def cos(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32"):
     """
     Cosine signal generator
 
@@ -72,7 +72,7 @@ def cos(freq=440, amp=1.0, dur=1.0, sr=48000, dtype='float32'):
     return AudioSignal(sig=sig, sr=sr)
 
 
-def sin(freq=440, amp=1.0, dur=1.0, sr=48000, dtype='float32'):
+def sin(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32"):
     """
     Sine signal generator
 
@@ -101,7 +101,7 @@ def sin(freq=440, amp=1.0, dur=1.0, sr=48000, dtype='float32'):
     return AudioSignal(sig=sig, sr=sr)
 
 
-def sawtooth(freq=440, amp=1.0, dur=1.0, sr=44800, dtype='float32'):
+def sawtooth(freq=440, amp=1.0, dur=1.0, sr=44800, dtype="float32"):
     """
     Generate sawtooth wave signal.
 
@@ -126,7 +126,7 @@ def sawtooth(freq=440, amp=1.0, dur=1.0, sr=44800, dtype='float32'):
     return AudioSignal(sig=sig, sr=sr)
 
 
-def pink(amp=1.0, dur=1.0, sr=48000, dtype='float64'):
+def pink(amp=1.0, dur=1.0, sr=48000, dtype="float64"):
     """
     Generate pink noise
 
