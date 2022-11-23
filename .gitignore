@@ -129,3 +129,4 @@ dmypy.json
 cython_debug/
 
 .idea/
+.flake8
