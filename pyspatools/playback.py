@@ -36,7 +36,6 @@ def play(
     try:
         from pya import Aserver
         from pya import Asig
-        from pya import find_device
 
         max_channel = num_channels or max(channels)
         with Aserver(
