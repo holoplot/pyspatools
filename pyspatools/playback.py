@@ -8,7 +8,7 @@ def pya_warning():
     warn(ms1 + ms2)
 
 
-def device_info():
+def all_device_info() -> dict:
     """
     Return a dictionary of device info detected by PyAudio
     """
@@ -18,6 +18,14 @@ def device_info():
         return find_device()
     except ImportError:
         pya_warning()
+        return {}
+
+
+def find_device_index(name: str) -> int:
+    for device in all_device_info():
+        if device['name'] == name:
+            return device['index']
+    raise AttributeError(f"{name} does not exist")
 
 
 def play(
