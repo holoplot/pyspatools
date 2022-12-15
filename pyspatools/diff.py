@@ -11,14 +11,14 @@ def match_size(a: AudioSignal, b: AudioSignal) -> tuple:
     Compare two signals and right trim to match the length to the smaller one
     """
     if a.length > b.length:
-        a.sig = a.sig[:, : b.length]
+        a.sig = a.sig[: b.length, :]
     else:
-        b.sig = b.sig[:, : a.length]
+        b.sig = b.sig[: a.length, :]
     return a, b
 
 
 class Diff:
-    def __init__(self, a: AudioSignal, b: AudioSignal, tolerance: int = 0):
+    def __init__(self, a: AudioSignal, b: AudioSignal, tolerance: int | float = 0):
         """A Diff provide comparison between the AudioSignal of two inputs."""
         self.a = a
         self.b = b
@@ -41,9 +41,14 @@ class Diff:
     def where(self) -> list:
         """A list of indices where the absolute delta value is greater than tolerance per channel."""
         return [
-            list(np.where(np.abs(ch_delta) > self.tolerance)[0])
-            for ch_delta in self.delta
+                list(np.where(np.abs(self.delta[:, ch]) > self.tolerance)[0])
+                for ch in range(self.channels)
         ]
+
+        # return [
+        #     list(np.where(np.abs(ch_delta) > self.tolerance)[0])
+        #     for ch_delta in self.delta
+        # ]
 
     @property
     def within_tolerance(self):
@@ -52,9 +57,9 @@ class Diff:
     @property
     def channel_max(self) -> np.ndarray:
         """An array of max value per channel"""
-        return np.amax(self.delta, axis=1)
+        return np.amax(self.delta, axis=0)
 
     @property
     def channel_min(self) -> np.ndarray:
         """An array of min value per channel"""
-        return np.amin(self.delta, axis=1)
+        return np.amin(self.delta, axis=0)

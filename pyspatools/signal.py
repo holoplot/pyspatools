@@ -42,10 +42,7 @@ class AudioSignal:
         self.sr = sr
         if isinstance(sig, str):
             # Currently only support PCM24
-            arry, sr = soundfile.read(file=sig, dtype="int32", always_2d=True)
-            arry = np.right_shift(arry, 8)
-            self.sig = pcm_to_float(arry, bitrate=24)
-            self.sr = sr
+            self.sig, self.sr = soundfile.read(sig, always_2d=True)
         else:
             self.sig = sig
 
@@ -84,7 +81,7 @@ class AudioSignal:
             except IndexError:
                 first_nonzero_sample.append(0)
         start_idx = min(first_nonzero_sample)
-        self.sig = self.sig[:, start_idx:]
+        self.sig = self.sig[start_idx:, :]
         return self
 
     def stft(
@@ -265,7 +262,8 @@ class AudioSignal:
         # TODO scipy.signal.__getattribute__ error
         Wn = np.array(cutoff_freqs) * 2 / self.sr
         b, a = signal.iirfilter(order, Wn, rp=rp, rs=rs, btype=btype, ftype=ftype)
-        return getattr(signal, filter)(b, a, self.sig, axis=0)
+        return AudioSignal(getattr(signal, filter)(b, a, self.sig, axis=0),
+                           sr=self.sr)
 
     def find_peaks(
         self,
@@ -298,3 +296,4 @@ class AudioSignal:
                 )
             )
         return results
+
