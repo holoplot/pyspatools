@@ -69,6 +69,10 @@ class AudioSignal:
     def length(self) -> int:
         return self.sig.shape[0]
 
+    @property
+    def duration(self) -> float:
+        return self.length / self.sr
+
     def left_trim(self):
         """
         Left trim signal per channel to the first nonzero sample index.
