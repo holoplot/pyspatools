@@ -175,6 +175,16 @@ class AudioSignal:
             [np.abs(np.fft.rfft(self.sig[:, i], n=n)) for i in range(self.sig.shape[1])]
         )
 
+    def to_mono(self):
+        """
+        Mix channels to mono signal.
+        """
+        blend = np.ones(self.channels) / self.channels
+        if len(blend) != self.channels:
+            raise AttributeError("len(blend) != self.channels")
+        else:
+            self.sig = np.sum(self.sig * blend, axis=1)
+
     def latency(self, threshold: float = 1.0, offset=0) -> list:
         """
         Iterate through each channel and returns first index that is over threshold value.
