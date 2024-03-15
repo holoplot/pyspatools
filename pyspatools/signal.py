@@ -310,4 +310,19 @@ class AudioSignal:
                 )
             )
         return results
+    
+    def right_trim(self):
+        """
+        Right trim signal per channel to the last nonzero sample index.
+            Use the maximal index across all channels.
+        """
+        last_nonzero_sample = []
+        for i in range(self.channels):
+            try:
+                last_nonzero_sample.append(np.where(self.sig[:, i] != 0)[0][-1])
+            except IndexError:
+                last_nonzero_sample.append(self.length)
+        end_idx = max(last_nonzero_sample)
+        self.sig = self.sig[:end_idx, :]
+        return self
 
