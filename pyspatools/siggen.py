@@ -45,7 +45,7 @@ def _convert_dtype(sig, dtype):
     return sig.reshape((sig.shape[0], 1))
 
 
-def cos(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32"):
+def cos(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32", phase=0):
     """
     Cosine signal generator
 
@@ -61,18 +61,21 @@ def cos(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32"):
         Sampling rate
     dtype : str, optional
         float32, float64, PCM16, PCM24, PCM32
+    phase : int, float
+        Phase in degress
 
     Returns
     -------
     numpy.ndarray
         The signal array
     """
-    sig = amp * np.cos(2 * np.pi * freq * np.linspace(0, dur, int(dur * sr)))
+    phase_rad = np.deg2rad(phase)
+    sig = amp * np.cos(2 * np.pi * freq * np.linspace(0, dur, int(dur * sr)) + phase_rad)
     sig = _convert_dtype(sig, dtype)
     return AudioSignal(sig=sig, sr=sr)
 
 
-def sin(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32"):
+def sin(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32", phase=0):
     """
     Sine signal generator
 
@@ -90,18 +93,21 @@ def sin(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32"):
         Channel count
     dtype : str, optional
         float32, float64, PCM16, PCM24, PCM32
+    phase : int, float
+        Phase in degrees
 
     Returns
     -------
     numpy.ndarray
         The signal array
     """
-    sig = amp * np.sin(2 * np.pi * freq * np.linspace(0, dur, int(dur * sr)))
+    phase_rad = np.deg2rad(phase)
+    sig = amp * np.sin(2 * np.pi * freq * np.linspace(0, dur, int(dur * sr)) + phase_rad)
     sig = _convert_dtype(sig, dtype)
     return AudioSignal(sig=sig, sr=sr)
 
 
-def sawtooth(freq=440, amp=1.0, dur=1.0, sr=44800, dtype="float32"):
+def sawtooth(freq=440, amp=1.0, dur=1.0, sr=44800, dtype="float32", phase=0):
     """
     Generate sawtooth wave signal.
 
@@ -117,11 +123,17 @@ def sawtooth(freq=440, amp=1.0, dur=1.0, sr=44800, dtype="float32"):
         sampling rate
     channels : int
         number of channels (Default value = 1)
+    dtype : str
+        data type (Default value = "float32")
+    phase : int, float
+        phase in degress
     Returns
     -------
     numpy.ndarray
     """
-    sig = amp * signal.sawtooth(2 * np.pi * freq * np.linspace(0, dur, int(dur * sr)))
+    phase_rad = np.deg2rad(phase)
+    phase_fraction = phase_rad / (2 * np.pi)  # Convert phase from radians to fraction of cycle
+    sig = amp * signal.sawtooth(2 * np.pi * freq * np.linspace(0, dur, int(dur * sr)) + phase_fraction)
     sig = _convert_dtype(sig, dtype)
     return AudioSignal(sig=sig, sr=sr)
 
