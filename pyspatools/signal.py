@@ -46,6 +46,12 @@ class AudioSignal:
         else:
             self.sig = sig
 
+        # Turn mono signal from shape (n, ) to (n, 1)
+        try:
+            _ = self.sig.shape[1]
+        except IndexError:
+            self.sig = np.expand_dims(self.sig, axis=1)
+
     @property
     def shape(self) -> tuple:
         return self.sig.shape
@@ -87,6 +93,7 @@ class AudioSignal:
         start_idx = min(first_nonzero_sample)
         self.sig = self.sig[start_idx:, :]
         return self
+
 
     def stft(
         self,
