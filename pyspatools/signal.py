@@ -1,5 +1,5 @@
-from typing import Optional
 from typing import Union
+from os import PathLike
 
 import numpy as np
 import pyloudnorm
@@ -30,7 +30,7 @@ def pcm_to_float(x: np.ndarray, bitrate: int) -> np.ndarray:
 
 
 class AudioSignal:
-    def __init__(self, sig: Union[np.ndarray, str], sr: int = 48000):
+    def __init__(self, sig: Union[np.ndarray, PathLike], sr: int = 48000):
         """
         Base class for that holds the audio array and processing methods
 
@@ -40,7 +40,7 @@ class AudioSignal:
 
         """
         self.sr = sr
-        if isinstance(sig, str):
+        if isinstance(sig, PathLike):
             # Currently only support PCM24
             self.sig, self.sr = soundfile.read(sig, always_2d=True)
         else:
