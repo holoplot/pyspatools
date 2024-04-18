@@ -1,5 +1,5 @@
 from copy import copy
-from typing import Union
+from typing import Union, Optional
 from os import PathLike
 
 import numpy as np
