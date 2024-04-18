@@ -1,5 +1,6 @@
-from typing import Optional
+from copy import copy
 from typing import Union
+from os import PathLike
 
 import numpy as np
 import pyloudnorm
@@ -30,7 +31,7 @@ def pcm_to_float(x: np.ndarray, bitrate: int) -> np.ndarray:
 
 
 class AudioSignal:
-    def __init__(self, sig: Union[np.ndarray, str], sr: int = 48000):
+    def __init__(self, sig: Union[np.ndarray, PathLike], sr: int = 48000):
         """
         Base class for that holds the audio array and processing methods
 
@@ -40,11 +41,17 @@ class AudioSignal:
 
         """
         self.sr = sr
-        if isinstance(sig, str):
+        if isinstance(sig, PathLike):
             # Currently only support PCM24
             self.sig, self.sr = soundfile.read(sig, always_2d=True)
         else:
             self.sig = sig
+
+        # Turn mono signal from shape (n, ) to (n, 1)
+        try:
+            _ = self.sig.shape[1]
+        except IndexError:
+            self.sig = np.expand_dims(self.sig, axis=1)
 
     @property
     def shape(self) -> tuple:
@@ -88,6 +95,7 @@ class AudioSignal:
         self.sig = self.sig[start_idx:, :]
         return self
 
+
     def stft(
         self,
         window="hann",
@@ -123,7 +131,7 @@ class AudioSignal:
             Specifies whether the input signal is extended at both ends,
             and how to generate the new values, in order to center the first windowed segment on the first input point.
             This has the benefit of enabling reconstruction of the first input point
-            when the employed window function starts at zero.
+            when the employed window function starts at zero.sigal
             Valid options are ['even', 'odd', 'constant', 'zeros', None].
             Defaults to ‘zeros’, for zero padding extension.
             I.e. [1, 2, 3, 4] is extended to [0, 1, 2, 3, 4, 0] for nperseg=3.
@@ -162,7 +170,7 @@ class AudioSignal:
 
         return freqs, times, Zxxs
 
-    def spectrum(self, n: Optional[int] = None) -> np.ndarray:
+    def spectrum(self, n: int | None = None) -> np.ndarray:
         """
         Calculate the absolute spectrum of each channel
 
@@ -175,15 +183,17 @@ class AudioSignal:
             [np.abs(np.fft.rfft(self.sig[:, i], n=n)) for i in range(self.sig.shape[1])]
         )
 
-    def to_mono(self):
+    @staticmethod
+    def to_mono(sig: np.ndarray) -> np.ndarray:
         """
         Mix channels to mono signal.
         """
-        blend = np.ones(self.channels) / self.channels
-        if len(blend) != self.channels:
+        channels = sig.shape[1]
+        blend = np.ones(channels) / channels
+        if len(blend) != channels:
             raise AttributeError("len(blend) != self.channels")
         else:
-            self.sig = np.sum(self.sig * blend, axis=1)
+            return np.sum(sig * blend, axis=1)
 
     def latency(self, threshold: float = 1.0, offset=0) -> list:
         """
@@ -325,4 +335,121 @@ class AudioSignal:
         end_idx = max(last_nonzero_sample)
         self.sig = self.sig[:end_idx, :]
         return self
+
+    def pitch_detection(self) -> float:
+        """
+        Find its fundamental frequency based on peak value in spectrum
+        """
+        sig = copy(self.sig)
+        if self.channels > 1:
+            sig = self.to_mono(sig)
+
+        rfftspec = np.fft.rfft(sig, axis=0)
+        freqs = np.linspace(0, self.sr / 2, self.length // 2 + 1)
+
+        return freqs[np.argmax(rfftspec)]
+
+
+    def pitch_detection_per_channel(self) -> list:
+        """
+        Take an AudioData and find its fundamental frequency based on peak value in spectrum for each channel separately.
+        """
+        freqs = np.linspace(0, self.sr / 2, self.length // 2 + 1)
+        fundamental_freqs = []
+
+        for i in range(self.channels):
+            channel = self.sig[:, i]
+
+            rfftspec = np.fft.rfft(channel, axis=0)
+
+            peak_index = np.argmax(np.abs(rfftspec))
+
+            fundamental_freqs.append(freqs[peak_index])
+
+        return fundamental_freqs
+
+    def detect_dropouts(self, threshold=0.01, min_duration=0.01, ignore_after=10) -> list:
+        """
+        Detect dropouts in an audio signal, processing each channel individually.
+
+        Parameters:
+        - threshold: The amplitude threshold below which a signal is considered a dropout. Default is 0.01.
+        - min_duration: The minimum duration (in seconds) for a segment to be considered a dropout. Default is 0.01 seconds.
+        - ignore_after: Ignore dropouts after this time in seconds. Default is 10 seconds.
+
+        Returns:
+        A list of lists, where each sublist contains tuples. Each tuple contains the start and end times (in seconds)
+        of detected dropouts for a channel.
+        """
+        signal = self.sig
+        sr = self.sr
+
+        # Initialize the list to hold dropout information for each channel
+        dropouts_per_channel = []
+
+        for i in range(self.channels):
+            channel = signal[:, i]
+
+            normalized_signal = np.abs(channel / np.max(np.abs(channel)))
+
+            below_threshold = normalized_signal < threshold
+
+            # Convert sample index to time
+            time_index = np.arange(len(channel)) / sr
+
+            # Identify contiguous regions below threshold
+            dropouts = []
+            dropout_start = None
+            for i in range(len(below_threshold)):
+                if below_threshold[i]:
+                    if dropout_start is None:
+                        dropout_start = i
+                else:
+                    if dropout_start is not None:
+                        if time_index[i] - time_index[dropout_start] >= min_duration:
+                            dropouts.append((time_index[dropout_start], time_index[i]))
+                        dropout_start = None
+
+            # Check if the last segment is a dropout
+            if dropout_start is not None and time_index[-1] - time_index[dropout_start] >= min_duration:
+                dropouts.append((time_index[dropout_start], time_index[-1]))
+
+            # Ignore dropouts that occur after the specified time
+            dropouts = [dropout for dropout in dropouts if dropout[0] <= ignore_after]
+
+            dropouts_per_channel.append(dropouts)
+
+        return dropouts_per_channel
+
+
+def combine_signals(signal1: AudioSignal, signal2: AudioSignal) -> AudioSignal:
+    """
+    Combine two AudioSignal objects into one with multiple channels, assuming both signals
+    have the same sampling rate and number of samples.
+
+    Parameters:
+    - signal1: The first AudioSignal object.
+    - signal2: The second AudioSignal object.
+
+    Returns:
+    An AudioSignal object with the combined channels of both input signals.
+    """
+    # Extract the raw signal data and ensure preconditions are met
+    if signal1.sr != signal2.sr:
+        raise ValueError("Sampling rates do not match.")
+    if signal1.length != signal2.length:
+        raise ValueError("Signal lengths do not match.")
+
+    # Determine the new number of channels
+    total_channels = signal1.channels + signal2.channels
+
+    # Create a new array for the combined signal
+    combined_signal = np.zeros((signal1.length, total_channels))
+
+    # Assign the data from the original signals to the combined signal
+    combined_signal[:, :signal1.channels] = signal1.sig
+    combined_signal[:, signal1.channels:] = signal2.sig
+
+    new_signal = AudioSignal(sig=combined_signal, sr=signal1.sr)
+    return new_signal
 
