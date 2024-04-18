@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Union
 from os import PathLike
 
@@ -130,7 +131,7 @@ class AudioSignal:
             Specifies whether the input signal is extended at both ends,
             and how to generate the new values, in order to center the first windowed segment on the first input point.
             This has the benefit of enabling reconstruction of the first input point
-            when the employed window function starts at zero.
+            when the employed window function starts at zero.sigal
             Valid options are ['even', 'odd', 'constant', 'zeros', None].
             Defaults to ‘zeros’, for zero padding extension.
             I.e. [1, 2, 3, 4] is extended to [0, 1, 2, 3, 4, 0] for nperseg=3.
@@ -334,6 +335,20 @@ class AudioSignal:
         end_idx = max(last_nonzero_sample)
         self.sig = self.sig[:end_idx, :]
         return self
+
+    def pitch_detection(self) -> float:
+        """
+        Find its fundamental frequency based on peak value in spectrum
+        """
+        sig = copy(self.sig)
+        if self.channels > 1:
+            sig = self.to_mono(sig)
+
+        rfftspec = np.fft.rfft(sig, axis=0)
+        freqs = np.linspace(0, self.sr / 2, self.length // 2 + 1)
+
+        return freqs[np.argmax(rfftspec)]
+
 
     def pitch_detection_per_channel(self) -> list:
         """
