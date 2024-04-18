@@ -1,29 +1,10 @@
 import numpy as np
 from scipy import signal
 
-from .helpers import lin_map
 from .helpers.const import *
 from .signal import AudioSignal
 
 __all__ = ["cos", "sin", "sawtooth", "pink"]
-
-
-def _get_pcm_range(dtype):
-    if dtype.upper() == "PCM24":
-        ymin = PCM24_SIGNED_MIN
-        ymax = PCM24_SIGNED_MAX
-    elif dtype.upper() == "PCM16":
-        ymin = PCM16_SIGNED_MIN
-        ymax = PCM16_SIGNED_MAX
-    elif dtype.upper() == "PCM32":
-        ymin = PCM32_SIGNED_MIN
-        ymax = PCM32_SIGNED_MAX
-    elif dtype.upper() == "PCM8":
-        ymin = PCM8_SIGNED_MIN
-        ymax = PCM8_SIGNED_MAX
-    else:
-        raise AttributeError("Unsupported dtype")
-    return ymin, ymax
 
 
 def _normalize(x):
@@ -35,17 +16,43 @@ def _normalize(x):
 
 
 def _convert_dtype(sig, dtype):
-    if dtype.lower() == "float32":
-        sig = sig.astype(np.float32)
-    elif "pcm" in dtype.lower():
-        out_min, out_max = _get_pcm_range(dtype)
-        sig = lin_map(x=sig, in_min=-1.0, in_max=1.0, out_min=out_min, out_max=out_max)
-        sig = sig.astype(np.int32)
+    """
+    Convert the data type of the signal as per dtype argument.
 
-    return sig.reshape((sig.shape[0], 1))
+    Parameters
+    ----------
+    sig : numpy.ndarray
+        The signal array
+    dtype : str
+        Data type to which the signal is to be converted
+
+    Returns
+    -------
+    numpy.ndarray
+        The signal array with the specified data type
+    """
+    if dtype == "float32":
+        return sig.astype(np.float32)
+    elif dtype == "float64":
+        return sig.astype(np.float64)
+    elif dtype == "PCM16":
+        return (sig * 32767).astype(np.int16)
+    elif dtype == "PCM24":
+        return (sig * 8388607).astype(np.int32)  # Using int32 to represent 24-bit as Python doesn't have a native 24-bit int
+    elif dtype == "PCM32":
+        return (sig * 2147483647).astype(np.int32)
+    else:
+        raise ValueError(f"Unsupported data type: {dtype}")
 
 
-def cos(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32", phase=0):
+def _duplicate_channels(sig, channels):
+    """
+    Duplicate the signal across the channels
+    """
+    return np.tile(sig[:, np.newaxis], (1, channels))
+
+
+def cos(freq=440, amp=1.0, dur=1.0, sr=48000, phase=0, channels=1, dtype="float32"):
     """
     Cosine signal generator
 
@@ -71,43 +78,14 @@ def cos(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32", phase=0):
     """
     phase_rad = np.deg2rad(phase)
     sig = amp * np.cos(2 * np.pi * freq * np.linspace(0, dur, int(dur * sr)) + phase_rad)
+    if channels > 1:
+        sig = _duplicate_channels(sig, channels)
+
     sig = _convert_dtype(sig, dtype)
     return AudioSignal(sig=sig, sr=sr)
 
 
-def sin(freq=440, amp=1.0, dur=1.0, sr=48000, dtype="float32", phase=0):
-    """
-    Sine signal generator
-
-    Parameters
-    ----------
-    freq : int, float
-        Signal will have only 1 consistent frequency
-    amp : int, float
-        Amplitude
-    dur : float
-        Duration in seconds
-    sr : int
-        Sampling rate
-    channels : int
-        Channel count
-    dtype : str, optional
-        float32, float64, PCM16, PCM24, PCM32
-    phase : int, float
-        Phase in degrees
-
-    Returns
-    -------
-    numpy.ndarray
-        The signal array
-    """
-    phase_rad = np.deg2rad(phase)
-    sig = amp * np.sin(2 * np.pi * freq * np.linspace(0, dur, int(dur * sr)) + phase_rad)
-    sig = _convert_dtype(sig, dtype)
-    return AudioSignal(sig=sig, sr=sr)
-
-
-def sawtooth(freq=440, amp=1.0, dur=1.0, sr=44800, dtype="float32", phase=0):
+def sawtooth(freq=440, amp=1.0, dur=1.0, sr=44800, phase=0, channels=1, dtype="float32"):
     """
     Generate sawtooth wave signal.
 
@@ -134,11 +112,13 @@ def sawtooth(freq=440, amp=1.0, dur=1.0, sr=44800, dtype="float32", phase=0):
     phase_rad = np.deg2rad(phase)
     phase_fraction = phase_rad / (2 * np.pi)  # Convert phase from radians to fraction of cycle
     sig = amp * signal.sawtooth(2 * np.pi * freq * np.linspace(0, dur, int(dur * sr)) + phase_fraction)
+    if channels > 1:
+        sig = _duplicate_channels(sig, channels)
     sig = _convert_dtype(sig, dtype)
     return AudioSignal(sig=sig, sr=sr)
 
 
-def pink(amp=1.0, dur=1.0, sr=48000, dtype="float64"):
+def pink(amp=1.0, dur=1.0, sr=48000, channels=1, dtype="float32"):
     """
     Generate pink noise
 
@@ -168,7 +148,7 @@ def pink(amp=1.0, dur=1.0, sr=48000, dtype="float64"):
     b0, b1, b2, b3, b4, b5, b6 = 0, 0, 0, 0, 0, 0, 0
     sig = []
     length = int(dur * sr)
-    for i in range(length):
+    for _ in range(length):
         white = np.random.random() * 1.98 - 0.99
         b0 = 0.99886 * b0 + white * 0.0555179
         b1 = 0.99332 * b1 + white * 0.0750759
@@ -179,5 +159,7 @@ def pink(amp=1.0, dur=1.0, sr=48000, dtype="float64"):
         sig.append(b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362)
         b6 = white * 0.115926
     sig = _normalize(sig) * amp
+    if channels > 1:
+        sig = _duplicate_channels(sig, channels)
     sig = _convert_dtype(sig, dtype)
     return AudioSignal(sig=sig, sr=sr)
