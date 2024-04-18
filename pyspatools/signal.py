@@ -381,21 +381,19 @@ class AudioSignal:
         A list of lists, where each sublist contains tuples. Each tuple contains the start and end times (in seconds)
         of detected dropouts for a channel.
         """
-        signal = self.sig
-        sr = self.sr
 
         # Initialize the list to hold dropout information for each channel
         dropouts_per_channel = []
 
         for i in range(self.channels):
-            channel = signal[:, i]
+            channel = self.sig[:, i]
 
             normalized_signal = np.abs(channel / np.max(np.abs(channel)))
 
             below_threshold = normalized_signal < threshold
 
             # Convert sample index to time
-            time_index = np.arange(len(channel)) / sr
+            time_index = np.arange(len(channel)) / self.sr
 
             # Identify contiguous regions below threshold
             dropouts = []
