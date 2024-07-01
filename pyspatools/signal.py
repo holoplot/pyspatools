@@ -345,9 +345,11 @@ class AudioSignal:
             sig = self.to_mono(sig)
 
         rfftspec = np.fft.rfft(sig, axis=0)
+        magnitude = np.abs(rfftspec)
+
         freqs = np.linspace(0, self.sr / 2, self.length // 2 + 1)
 
-        return freqs[np.argmax(rfftspec)]
+        return freqs[np.argmax(magnitude)]
 
 
     def pitch_detection_per_channel(self) -> list:
